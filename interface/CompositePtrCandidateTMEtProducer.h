@@ -11,7 +11,7 @@
  *
  * \version $Revision: 1.1 $
  *
- * $Id: CompositePtrCandidateTMEtProducer.h,v 1.1 2009/06/10 09:33:09 veelken Exp $
+ * $Id: CompositePtrCandidateTMEtProducer.h,v 1.1 2009/07/09 12:19:14 veelken Exp $
  *
  */
 
@@ -27,7 +27,7 @@
 
 #include "DataFormats/Common/interface/View.h"
 
-#include "PhysicsTools/Utilities/interface/deltaR.h"
+#include "DataFormats/Math/interface/deltaR.h"
 
 #include "TauAnalysis/CandidateTools/interface/FetchCollection.h"
 

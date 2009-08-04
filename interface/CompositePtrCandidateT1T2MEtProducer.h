@@ -12,9 +12,9 @@
  *          Michal Bluj,
  *          Christian Veelken
  *
- * \version $Revision: 1.3 $
+ * \version $Revision: 1.4 $
  *
- * $Id: CompositePtrCandidateT1T2MEtProducer.h,v 1.3 2009/07/22 11:23:47 monicava Exp $
+ * $Id: CompositePtrCandidateT1T2MEtProducer.h,v 1.4 2009/07/28 09:37:31 veelken Exp $
  *
  */
 
@@ -30,7 +30,7 @@
 
 #include "DataFormats/Common/interface/View.h"
 
-#include "PhysicsTools/Utilities/interface/deltaR.h"
+#include "DataFormats/Math/interface/deltaR.h"
 
 #include "TauAnalysis/CandidateTools/interface/FetchCollection.h"
 
