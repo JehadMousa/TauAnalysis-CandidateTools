@@ -6,6 +6,7 @@ from TauAnalysis.CandidateTools.muTauPairSelection_cfi import *
 from TauAnalysis.CandidateTools.diTauPairSelection_cfi import *
 
 from TauAnalysis.CandidateTools.tools.objSelConfigurator import *
+from TauAnalysis.CandidateTools.sysErrDefinitions_cfi import *
 
 #--------------------------------------------------------------------------------
 # define selection criteria for e + mu pairs
@@ -31,7 +32,7 @@ patElecMuPairSelConfigurator = objSelConfigurator(
     doSelIndividual = True
 )
 
-selectElecMuPairs = patElecMuPairSelConfigurator.configure(namespace = locals())
+selectElecMuPairs = patElecMuPairSelConfigurator.configure(pyNameSpace = locals())
 
 selectedElecMuPairsAntiOverlapVetoLooseElectronIsolation.cut = selectedElecMuPairsAntiOverlapVeto.cut
 selectedElecMuPairsZeroChargeLooseElectronIsolation.cut = selectedElecMuPairsZeroCharge.cut
@@ -52,7 +53,7 @@ patElecMuPairSelConfiguratorLooseElectronIsolation = objSelConfigurator(
     doSelIndividual = True
 )
 
-selectElecMuPairsLooseElectronIsolation = patElecMuPairSelConfiguratorLooseElectronIsolation.configure(namespace = locals())
+selectElecMuPairsLooseElectronIsolation = patElecMuPairSelConfiguratorLooseElectronIsolation.configure(pyNameSpace = locals())
 
 #--------------------------------------------------------------------------------
 # define selection criteria for e + tau-jet pairs
@@ -76,7 +77,7 @@ patElecTauPairSelConfigurator = objSelConfigurator(
     doSelIndividual = True
 )
 
-selectElecTauPairs = patElecTauPairSelConfigurator.configure(namespace = locals())
+selectElecTauPairs = patElecTauPairSelConfigurator.configure(pyNameSpace = locals())
 
 selectedElecTauPairsAntiOverlapVetoLooseElectronIsolation.cut = selectedElecTauPairsAntiOverlapVeto.cut
 selectedElecTauPairsZeroChargeLooseElectronIsolation.cut = selectedElecTauPairsZeroCharge.cut
@@ -95,7 +96,7 @@ patElecTauPairSelConfiguratorLooseElectronIsolation = objSelConfigurator(
     doSelIndividual = True
 )
 
-selectElecTauPairsLooseElectronIsolation = patElecTauPairSelConfiguratorLooseElectronIsolation.configure(namespace = locals())
+selectElecTauPairsLooseElectronIsolation = patElecTauPairSelConfiguratorLooseElectronIsolation.configure(pyNameSpace = locals())
 
 #--------------------------------------------------------------------------------
 # define selection criteria for mu + tau-jet pairs
@@ -119,7 +120,20 @@ patMuTauPairSelConfigurator = objSelConfigurator(
     doSelIndividual = True
 )
 
-selectMuTauPairs = patMuTauPairSelConfigurator.configure(namespace = locals())
+selectedMuTauPairsCollinearApproxFailedCumulative = cms.EDFilter("PATMuTauPairSelector",
+    src = cms.InputTag('selectedMuTauPairsAntiBackToBackCumulative'),
+    cut = cms.string('!collinearApproxIsValid'),                                                       
+    filter = cms.bool(False)
+)
+
+selectedMuTauPairsCollinearApproxFailedIndividual = cms.EDFilter("PATMuTauPairSelector",
+    src = cms.InputTag('allMuTauPairs'),
+    cut = cms.string('!collinearApproxIsValid'),                                                       
+    filter = cms.bool(False)
+)
+
+
+selectMuTauPairs = patMuTauPairSelConfigurator.configure(pyNameSpace = locals())
 
 selectedMuTauPairsAntiOverlapVetoLooseMuonIsolation.cut = selectedMuTauPairsAntiOverlapVeto.cut
 selectedMuTauPairsZeroChargeLooseMuonIsolation.cut = selectedMuTauPairsZeroCharge.cut
@@ -138,7 +152,7 @@ patMuTauPairSelConfiguratorLooseMuonIsolation = objSelConfigurator(
     doSelIndividual = True
 )
 
-selectMuTauPairsLooseMuonIsolation = patMuTauPairSelConfiguratorLooseMuonIsolation.configure(namespace = locals())
+selectMuTauPairsLooseMuonIsolation = patMuTauPairSelConfiguratorLooseMuonIsolation.configure(pyNameSpace = locals())
 
 #--------------------------------------------------------------------------------
 # define selection criteria for tau-jet + tau-jet pairs
@@ -158,9 +172,11 @@ patDiTauPairSelConfigurator = objSelConfigurator(
     doSelIndividual = True
 )
 
-selectDiTauPairs = patDiTauPairSelConfigurator.configure(namespace = locals())
+selectDiTauPairs = patDiTauPairSelConfigurator.configure(pyNameSpace = locals())
 
-selectDiTauPairsAllKinds = cms.Sequence( selectElecMuPairs + selectElecMuPairsLooseElectronIsolation
-                                        +selectElecTauPairs + selectElecTauPairsLooseElectronIsolation
-                                        +selectMuTauPairs + selectMuTauPairsLooseMuonIsolation
-                                        +selectDiTauPairs )
+selectDiTauPairsAllKinds = cms.Sequence(
+    selectElecMuPairs + selectElecMuPairsLooseElectronIsolation
+   + selectElecTauPairs + selectElecTauPairsLooseElectronIsolation
+   + selectMuTauPairs + selectMuTauPairsLooseMuonIsolation
+   + selectDiTauPairs
+)
