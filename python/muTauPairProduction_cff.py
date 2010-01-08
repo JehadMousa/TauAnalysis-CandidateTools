@@ -17,24 +17,7 @@ allMuTauPairs = cms.EDProducer("PATMuTauPairProducer",
     verbosity = cms.untracked.int32(0)
 )
 
-muTauPairProdConfigurator = objProdConfigurator(
-    allMuTauPairs,
-    systematics = {
-        "sysMuonPtUp"           : { "srcLeg1" : "selectedLayer1MuonsTrkIPsysMuonPtUpCumulative" },
-        "sysMuonPtDown"         : { "srcLeg1" : "selectedLayer1MuonsTrkIPsysMuonPtDownCumulative" },
-        "sysTauJetEnUp"         : { "srcLeg2" : "selectedLayer1TausMuonVetoSysTauJetEnUpCumulative" },
-        "sysTauJetEnDown"       : { "srcLeg2" : "selectedLayer1TausMuonVetoSysTauJetEnDownCumulative" }, 
-        "sysTauJetThetaUp"      : { "srcLeg2" : "selectedLayer1TausMuonVetoSysTauJetThetaUpCumulative" }, 
-        "sysTauJetThetaDown"    : { "srcLeg2" : "selectedLayer1TausMuonVetoSysTauJetThetaDownCumulative" }, 
-        "sysTauJetPhiUp"        : { "srcLeg2" : "selectedLayer1TausMuonVetoSysTauJetPhiUpCumulative" }, 
-        "sysTauJetPhiDown"      : { "srcLeg2" : "selectedLayer1TausMuonVetoSysTauJetPhiDownCumulative" }, 
-        "sysTauLeadTrackPtUp"   : { "srcLeg2" : "selectedLayer1TausMuonVetoSysTauLeadTrackPtUpCumulative" }, 
-        "sysTauLeadTrackPtDown" : { "srcLeg2" : "selectedLayer1TausMuonVetoSysTauLeadTrackPtDownCumulative" }
-    },
-    pyModuleName = __name__
-)
-
-produceMuTauPairs = muTauPairProdConfigurator.configure(pyNameSpace = locals())
+produceMuTauPairs = cms.Sequence( allMuTauPairs )
 
 # define additional collections of muon + tau-jet candidates
 # with loose track and ECAL isolation applied on muon leg
@@ -53,24 +36,6 @@ allMuTauPairsLooseMuonIsolation = cms.EDProducer("PATMuTauPairProducer",
     verbosity = cms.untracked.int32(0)
 )
 
-muTauPairProdConfiguratorLooseMuonIsolation = objProdConfigurator(
-    allMuTauPairsLooseMuonIsolation,
-    systematics = {
-        "sysMuonPtUp"           : { "srcLeg1" : "selectedLayer1MuonsTrkIPlooseMuonIsolationSysMuonPtUpCumulative" },
-        "sysMuonPtDown"         : { "srcLeg1" : "selectedLayer1MuonsTrkIPlooseMuonIsolationSysMuonPtDownCumulative" },
-        "sysTauJetEnUp"         : { "srcLeg2" : "selectedLayer1TausMuonVetoSysTauJetEnUpCumulative" },
-        "sysTauJetEnDown"       : { "srcLeg2" : "selectedLayer1TausMuonVetoSysTauJetEnDownCumulative" }, 
-        "sysTauJetThetaUp"      : { "srcLeg2" : "selectedLayer1TausMuonVetoSysTauJetThetaUpCumulative" }, 
-        "sysTauJetThetaDown"    : { "srcLeg2" : "selectedLayer1TausMuonVetoSysTauJetThetaDownCumulative" }, 
-        "sysTauJetPhiUp"        : { "srcLeg2" : "selectedLayer1TausMuonVetoSysTauJetPhiUpCumulative" }, 
-        "sysTauJetPhiDown"      : { "srcLeg2" : "selectedLayer1TausMuonVetoSysTauJetPhiDownCumulative" }, 
-        "sysTauLeadTrackPtUp"   : { "srcLeg2" : "selectedLayer1TausMuonVetoSysTauLeadTrackPtUpCumulative" }, 
-        "sysTauLeadTrackPtDown" : { "srcLeg2" : "selectedLayer1TausMuonVetoSysTauLeadTrackPtDownCumulative" }
-    },
-    pyModuleName = __name__
-)
+produceMuTauPairsLooseMuonIsolation = cms.Sequence( allMuTauPairsLooseMuonIsolation )
 
-produceMuTauPairsLooseMuonIsolation = muTauPairProdConfiguratorLooseMuonIsolation.configure(pyNameSpace = locals())
-
-#produceMuTauPairsAll = cms.Sequence( produceMuTauPairs * produceMuTauPairsLooseMuonIsolation )
-produceMuTauPairsAll = cms.Sequence( allMuTauPairs * allMuTauPairsLooseMuonIsolation )
+produceMuTauPairsAll = cms.Sequence( produceMuTauPairs * produceMuTauPairsLooseMuonIsolation )
