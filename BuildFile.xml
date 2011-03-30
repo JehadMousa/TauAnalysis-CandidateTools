@@ -22,7 +22,6 @@
 <use   name="root"/>
 <use   name="rootminuit"/>
 <use   name="rootminuit2"/>
-<use   name="classlib"/>
 <export>
   <lib   name="1"/>
 </export>
