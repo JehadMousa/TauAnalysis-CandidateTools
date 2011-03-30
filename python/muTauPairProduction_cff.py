@@ -203,4 +203,4 @@ nSVfitMuTauPairHypotheses = cms.Sequence(
     nSVfitMuTauPairHypothesesPS1 + nSVfitMuTauPairHypothesesPS2 + nSVfitMuTauPairHypothesesPS3
    + nSVfitMuTauPairHypothesesPol1 + nSVfitMuTauPairHypothesesPol2 + nSVfitMuTauPairHypothesesPol3
 )
-produceMuTauPairsAll *= nSVfitMuTauPairHypotheses
+#produceMuTauPairsAll *= nSVfitMuTauPairHypotheses
