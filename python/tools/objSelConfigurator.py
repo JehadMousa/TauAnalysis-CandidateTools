@@ -32,13 +32,13 @@ class objSelConfigurator(cms._ParameterTypeBase):
             if lastModuleName is None:
                 return src
             else:
-                return cms.InputTag(lastModuleName)
+                return lastModuleName
         @staticmethod
         def get_moduleName(name, sysName = None):
             moduleName_base = name
             if sysName is not None:
-                moduleName_base = composeModuleName([ name, sysName ])
-            return composeModuleName([ moduleName_base, "Cumulative" ])
+                moduleName_base = composeModuleName(name, sysName)
+            return composeModuleName(moduleName_base, "Cumulative")
 
     class _getterIndividual:
         # auxiliary class for composing name of module selecting "individual" collection
@@ -49,10 +49,10 @@ class objSelConfigurator(cms._ParameterTypeBase):
         def get_moduleName(name, sysName = None):
             moduleName_base = name
             if sysName is not None:
-                moduleName_base = composeModuleName([ name, sysName ])
-            return composeModuleName([ moduleName_base, "Individual" ])
+                moduleName_base = composeModuleName(name, sysName)
+            return composeModuleName(moduleName_base, "Individual")
 
-    def _addModule(self, objSelItem, getter, sysName = None, sysInputTag = None, pyNameSpace = None, process = None):
+    def _addModule(self, objSelItem, getter, sysName = None, sysInputTag = None, pyNameSpace = None, process = None):        
         # create module
         moduleType = objSelItem.type_()
         module = cms.EDFilter(moduleType)
@@ -71,9 +71,7 @@ class objSelConfigurator(cms._ParameterTypeBase):
             src = getter.get_src(self.src, self.lastModuleName)
         else:
             src = getter.get_src(sysInputTag, self.lastModuleName)
-        if not isinstance(src, cms.InputTag):
-            src = cms.InputTag(src)
-        setattr(module, self.srcAttr, src)
+        setattr(module, self.srcAttr, cms.InputTag(src))
 
         # if process object exists, attach module to process object;
         # else register module in global python name-space
@@ -110,7 +108,7 @@ class objSelConfigurator(cms._ParameterTypeBase):
             if self.systematics is not None:
                 for sysName, sysInputTag in self.systematics.items():
                     self.lastModuleName = None
-                    for objSelItem in self.objSelList:                        
+                    for objSelItem in self.objSelList:
                         self._addModule(objSelItem, getter, sysName = sysName, sysInputTag = sysInputTag,
                                         pyNameSpace = pyNameSpace, process = process)
 

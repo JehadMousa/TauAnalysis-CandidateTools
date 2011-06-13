@@ -10,10 +10,6 @@
 
 #include "DataFormats/Candidate/interface/CandidateFwd.h" 
 #include "DataFormats/Candidate/interface/Candidate.h" 
-#include "DataFormats/METReco/interface/MET.h"
-#include "DataFormats/Common/interface/Ptr.h"
-
-#include "TauAnalysis/CandidateTools/interface/generalAuxFunctions.h"
 
 #include <TMath.h>
 
@@ -21,7 +17,6 @@ template<typename T>
 class CompositePtrCandidateTMEtAlgorithm 
 {
   typedef edm::Ptr<T> TPtr;
-  typedef edm::Ptr<reco::MET> MEtPtr;
 
  public:
 
@@ -29,17 +24,10 @@ class CompositePtrCandidateTMEtAlgorithm
   {
     verbosity_ = cfg.getUntrackedParameter<int>("verbosity", 0);
   }
-  ~CompositePtrCandidateTMEtAlgorithm() 
-  {}
-
-  void beginJob()
-  {}
-
-  void beginEvent(edm::Event& evt, const edm::EventSetup& es)
-  {}
+  ~CompositePtrCandidateTMEtAlgorithm() {}
 
   CompositePtrCandidateTMEt<T> buildCompositePtrCandidate(const TPtr visDecayProducts, 
-							  const MEtPtr met)
+							  const reco::CandidatePtr met)
   {
     CompositePtrCandidateTMEt<T> compositePtrCandidate(visDecayProducts, met);
   

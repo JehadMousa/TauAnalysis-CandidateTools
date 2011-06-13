@@ -3,7 +3,6 @@ import sys
 
 from TauAnalysis.CandidateTools.tools.getInstanceName import getInstanceName
 from TauAnalysis.CandidateTools.tools.composeModuleName import composeModuleName
-from TauAnalysis.CandidateTools.tools.recursiveSetAttr import recursiveSetAttr
 
 #--------------------------------------------------------------------------------
 # utility function for generation of a set of modules
@@ -22,7 +21,7 @@ class objProdConfigurator(cms._ParameterTypeBase):
         self.systematics = systematics
         self.pyModuleName = pyModuleName,
 
-    def _addModule(self, objProdItem, sysName, sysAttributes, pyNameSpace = None, process = None):
+    def _addModule(self, objProdItem, sysName, sysInputTags, pyNameSpace = None, process = None):        
         # create module
         moduleType = objProdItem.type_()
         module = cms.EDProducer(moduleType)
@@ -31,21 +30,15 @@ class objProdConfigurator(cms._ParameterTypeBase):
         # to default values
         for objProdAttrName in dir(objProdItem):
             objProdAttr = getattr(objProdItem, objProdAttrName)
-            if isinstance(objProdAttr, cms._ParameterTypeBase) and not objProdAttrName in [ "pluginName", "pluginType" ]:
-                if isinstance(objProdAttr, cms.PSet):
-                    # CV: need to clone configuration parameters of type cms.PSet,...
-                    #     in order to avoid that recursiveSetAttr function
-                    #     overwrites objProd "template" object passed to objProdConfigurator constructor !!
-                    setattr(module, objProdAttrName, objProdAttr.clone())
-                else:
-                    setattr(module, objProdAttrName, objProdAttr)
+            if isinstance(objProdAttr, cms._ParameterTypeBase) and not objProdAttrName in ["pluginName", "pluginType"]:
+                setattr(module, objProdAttrName, objProdAttr)
 
         # set names of source collections
         # to objects shifted in energy/transverse momentum, theta, phi...
-        for sysAttrName, sysAttrValue in sysAttributes.items():
-            recursiveSetAttr(module, sysAttrName, sysAttrValue)
+        for sysInputTagAttrName, sysInputTagValue in sysInputTags.items():
+            setattr(module, sysInputTagAttrName, cms.InputTag(sysInputTagValue))
                 
-        moduleName = composeModuleName([ getInstanceName(objProdItem, pyNameSpace, process), sysName ])
+        moduleName = composeModuleName(getInstanceName(objProdItem, pyNameSpace, process), sysName)
         module.setLabel(moduleName)
 
         # if process object exists, attach module to process object;
@@ -73,8 +66,8 @@ class objProdConfigurator(cms._ParameterTypeBase):
         self.sequence = self.objProd
 
         if self.systematics is not None:
-            for sysName, sysAttributes in self.systematics.items():
-                self._addModule(self.objProd, sysName = sysName, sysAttributes = sysAttributes,
+            for sysName, sysInputTags in self.systematics.items():
+                self._addModule(self.objProd, sysName = sysName, sysInputTags = sysInputTags,
                                 pyNameSpace = pyNameSpace, process = process)
 
         return cms.Sequence(self.sequence)

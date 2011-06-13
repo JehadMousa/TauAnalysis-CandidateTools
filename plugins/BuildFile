@@ -1,0 +1,14 @@
+<export></export>
+<library name=TauAnalysisCandidateTools_plugins file=*.cc>
+  <use name=FWCore/Framework>
+  <use name=FWCore/MessageLogger>
+  <use name=FWCore/ParameterSet>
+  <use name=FWCore/PluginManager>
+  <use name=FWCore/Utilities>
+  <use name=PhysicsTools/UtilAlgos>
+  <use name=PhysicsTools/JetMCUtils>
+  <use name=PhysicsTools/Utilities>
+  <use name=AnalysisDataFormats/TauAnalysis>
+  <use name=TauAnalysis/CandidateTools>
+</library>
+

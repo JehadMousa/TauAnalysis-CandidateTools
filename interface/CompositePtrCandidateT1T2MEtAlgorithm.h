@@ -9,142 +9,60 @@
 #include "AnalysisDataFormats/TauAnalysis/interface/CompositePtrCandidateT1T2MEt.h"
 #include "TrackingTools/TransientTrack/interface/TransientTrackBuilder.h"
 
-#include "DataFormats/Candidate/interface/CandidateFwd.h"
-#include "DataFormats/Candidate/interface/Candidate.h"
+#include "DataFormats/Candidate/interface/CandidateFwd.h" 
+#include "DataFormats/Candidate/interface/Candidate.h" 
 #include "DataFormats/HepMCCandidate/interface/GenParticleFwd.h"
 #include "DataFormats/HepMCCandidate/interface/GenParticle.h"
-#include "DataFormats/METReco/interface/MET.h"
 
-#include "TauAnalysis/CandidateTools/interface/PFMEtSignInterface.h"
-#include "TauAnalysis/CandidateTools/interface/NSVfitAlgorithmBase.h"
 #include "TauAnalysis/CandidateTools/interface/candidateAuxFunctions.h"
-#include "TauAnalysis/CandidateTools/interface/generalAuxFunctions.h"
+
+#include "TauAnalysis/CandidateTools/interface/SVMethodFitter.h"
 
 #include "TMath.h"
 #include "TF1.h"
 
 #include <string>
-#include <vector>
 
 template<typename T1, typename T2>
-class CompositePtrCandidateT1T2MEtAlgorithm
+class CompositePtrCandidateT1T2MEtAlgorithm 
 {
   typedef edm::Ptr<T1> T1Ptr;
   typedef edm::Ptr<T2> T2Ptr;
-  typedef edm::Ptr<reco::MET> MEtPtr;
 
  public:
 
   CompositePtrCandidateT1T2MEtAlgorithm(const edm::ParameterSet& cfg)
-    : pfMEtSign_(0)
   {
-    //std::cout << "<CompositePtrCandidateT1T2MEtAlgorithm::CompositePtrCandidateT1T2MEtAlgorithm>:" << std::endl;
-
+    recoMode_ = cfg.getParameter<std::string>("recoMode");
     verbosity_ = cfg.getUntrackedParameter<int>("verbosity", 0);
-
-    if ( cfg.exists("pfMEtSign") ) {
-      edm::ParameterSet cfgPFMEtSign = cfg.getParameter<edm::ParameterSet>("pfMEtSign");
-      pfMEtSign_ = new PFMEtSignInterface(cfgPFMEtSign);
-    }
-
-    if ( cfg.exists("nSVfit") ) {
-      edm::ParameterSet cfgNSVfit = cfg.getParameter<edm::ParameterSet>("nSVfit");
-      std::vector<std::string> nSVfitAlgorithmNames = cfgNSVfit.getParameterNamesForType<edm::ParameterSet>();
-      for ( std::vector<std::string>::const_iterator nSVfitAlgorithmName = nSVfitAlgorithmNames.begin();
-	    nSVfitAlgorithmName != nSVfitAlgorithmNames.end(); ++nSVfitAlgorithmName ) {
-	edm::ParameterSet cfgNSVfitAlgorithm = cfgNSVfit.getParameter<edm::ParameterSet>(*nSVfitAlgorithmName);
-	edm::ParameterSet cfg_config = cfgNSVfitAlgorithm.getParameter<edm::ParameterSet>("config");
-	edm::ParameterSet cfg_event = cfg_config.getParameter<edm::ParameterSet>("event");
-	edm::ParameterSet cfg_algorithm = cfgNSVfitAlgorithm.getParameter<edm::ParameterSet>("algorithm");
-	cfg_algorithm.addParameter<edm::ParameterSet>("event", cfg_event);
-	cfg_algorithm.addParameter<std::string>("pluginName", *nSVfitAlgorithmName);
-	std::string pluginType = cfg_algorithm.getParameter<std::string>("pluginType");
-	NSVfitAlgorithmBase* nSVfitAlgorithm = NSVfitAlgorithmPluginFactory::get()->create(pluginType, cfg_algorithm);
-        try {
-          nSVfitAlgorithms_.insert(std::pair<std::string, NSVfitAlgorithmBase*>(*nSVfitAlgorithmName, nSVfitAlgorithm));
-        } catch (...) {
-          edm::LogError("NSVFitConfigurationError") <<
-            "Caught exception when building NSVfit algorithm: "
-            << *nSVfitAlgorithmName  << std::endl;
-          throw;
-        }
-	//std::cout << "--> adding nSVfit algorithm: name = " << (*nSVfitAlgorithmName) << std::endl;
-      }
-    }
-
-    scaleFuncImprovedCollinearApprox_ = cfg.exists("scaleFuncImprovedCollinearApprox") ?
-      cfg.getParameter<std::string>("scaleFuncImprovedCollinearApprox") : "1";
+    scaleFuncImprovedCollinearApprox_ = cfg.getParameter<std::string>("scaleFuncImprovedCollinearApprox");
     /// compute the scale factor to weight the diTau mass
     /// computed in the improved collinear approximation;
     /// NO re-scaling of the p4 is made at this stage.
-    scaleFunc_ = new TF1("scaleFunc_", scaleFuncImprovedCollinearApprox_.c_str(), 10, 300);
-
-    if ( cfg.exists("genParticleMatchPdgId") ) {
-      genParticleMatchPdgId_ = cfg.getParameter<vint>("genParticleMatchPdgId");
-    } else {
-      // per default, match to gen. tau leptons
-      genParticleMatchPdgId_.push_back(+15);
-      genParticleMatchPdgId_.push_back(-15);
-    }
+    scaleFunc_ = new TF1("scaleFunc_",scaleFuncImprovedCollinearApprox_.c_str(),10,300);
+  }
+  ~CompositePtrCandidateT1T2MEtAlgorithm() {
+    delete scaleFunc_;  
   }
 
-  ~CompositePtrCandidateT1T2MEtAlgorithm()
-  {
-    delete pfMEtSign_;
-
-    for ( typename std::map<std::string, NSVfitAlgorithmBase*>::iterator it = nSVfitAlgorithms_.begin();
-	  it != nSVfitAlgorithms_.end(); ++it ) {
-      delete it->second;
-    }
-
-    delete scaleFunc_;
-  }
-
-  void beginJob(bool doSVreco)
-  {
-    if ( doSVreco ) {
-      for ( typename std::map<std::string, NSVfitAlgorithmBase*>::iterator nSVfitAlgorithm = nSVfitAlgorithms_.begin();
-	    nSVfitAlgorithm != nSVfitAlgorithms_.end(); ++nSVfitAlgorithm ) {
-	nSVfitAlgorithm->second->beginJob();
-      }
-    }
-  }
-
-  void beginEvent(edm::Event& evt, const edm::EventSetup& es, bool doSVreco, bool doPFMEtSign)
-  {
-    if ( doPFMEtSign && pfMEtSign_ ) pfMEtSign_->beginEvent(evt, es);
-
-    if ( doSVreco ) {
-      for ( typename std::map<std::string, NSVfitAlgorithmBase*>::iterator nSVfitAlgorithm = nSVfitAlgorithms_.begin();
-	    nSVfitAlgorithm != nSVfitAlgorithms_.end(); ++nSVfitAlgorithm ) {
-	nSVfitAlgorithm->second->beginEvent(evt, es);
-      }
-    }
-  }
-
-  CompositePtrCandidateT1T2MEt<T1,T2> buildCompositePtrCandidate(const T1Ptr leg1,
-								 const T2Ptr leg2,
-								 const MEtPtr met,
+  CompositePtrCandidateT1T2MEt<T1,T2> buildCompositePtrCandidate(const T1Ptr leg1, 
+								 const T2Ptr leg2, 
+								 const reco::CandidatePtr met,
 								 const reco::GenParticleCollection* genParticles,
                                                                  const reco::Vertex* pv,
                                                                  const reco::BeamSpot* beamSpot,
-                                                                 const TransientTrackBuilder* trackBuilder,
-								 const std::string& recoMode,
-								 bool doSVreco, bool doPFMEtSign)
+                                                                 const TransientTrackBuilder* trackBuilder, 
+								 bool doSVreco)
   {
-    //std::cout << "<CompositePtrCandidateT1T2MEtAlgorithm::buildCompositePtrCandidate>:"<< std::endl;
-    //if ( !met.isNull() ) std::cout << " MET: pt = " << met->pt() << std::endl;
-    //else                 std::cout << " MET: none." << std::endl;
-
     CompositePtrCandidateT1T2MEt<T1,T2> compositePtrCandidate(leg1, leg2, met);
-
-    if ( leg1.isNull() ||
+  
+    if ( leg1.isNull() || 
          leg2.isNull() ) {
       edm::LogError ("CompositePtrCandidateT1T2MEtAlgorithm") << " Pointers to visible Decay products invalid !!";
       return compositePtrCandidate;
     }
 
-//--- compute quantities that are independent of MET
+//--- compute quantities that are independent of MET	
     compositePtrCandidate.setCharge(leg1->charge() + leg2->charge());
     compositePtrCandidate.setP4Vis(leg1->p4() + leg2->p4());
     compositePtrCandidate.setDR12(reco::deltaR(leg1->p4(), leg2->p4()));
@@ -155,9 +73,11 @@ class CompositePtrCandidateT1T2MEtAlgorithm
 //--- compute quantities that do dependent on MET
     if ( met.isNonnull() ) {
       compCollinearApprox(compositePtrCandidate, leg1->p4(), leg2->p4(), met->px(), met->py());
+      // add a Improved collinear approximation
       compImprovedCollinearApprox(compositePtrCandidate, leg1->p4(), leg2->p4(), met->px(), met->py());
+
       compositePtrCandidate.setP4CDFmethod(compP4CDFmethod(leg1->p4(), leg2->p4(), met->px(), met->py()));
-      compositePtrCandidate.setMt12MET(compMt(leg1->p4(), leg2->p4(), met->px(), met->py()));
+      compositePtrCandidate.setMt12MET(compMt(leg1->p4(), leg2->p4(), met->px(), met->py()));    
       compositePtrCandidate.setMt1MET(compMt(leg1->p4(), met->px(), met->py()));
       compositePtrCandidate.setMt2MET(compMt(leg2->p4(), met->px(), met->py()));
       compositePtrCandidate.setDPhi1MET(TMath::Abs(normalizedPhi(leg1->phi() - met->phi())));
@@ -165,36 +85,28 @@ class CompositePtrCandidateT1T2MEtAlgorithm
 
       compZeta(compositePtrCandidate, leg1->p4(), leg2->p4(), met->px(), met->py());
 
-//--- compute (PF)MEt significance matrix
-      if ( doPFMEtSign && pfMEtSign_ ) {
-	std::list<const reco::Candidate*> daughterHypothesesList;
-	daughterHypothesesList.push_back(leg1.get());
-	daughterHypothesesList.push_back(leg2.get());
-	compositePtrCandidate.setMEtSignMatrix((*pfMEtSign_)(daughterHypothesesList));
-      }
-
 //--- SV method computation (if we have the PV and beamspot)
-      if ( doSVreco ) {
-	if ( pv ) {
-	  for ( typename std::map<std::string, NSVfitAlgorithmBase*>::const_iterator nSVfitAlgorithm = nSVfitAlgorithms_.begin();
-		nSVfitAlgorithm != nSVfitAlgorithms_.end(); ++nSVfitAlgorithm ) {
-	    //std::cout << "--> running nSVfit algorithm: name = " << nSVfitAlgorithm->first << std::endl;
-	    typedef edm::Ptr<reco::Candidate> CandidatePtr;
-	    typedef std::map<std::string, CandidatePtr> inputParticleMap;
-	    inputParticleMap inputParticles;
-	    inputParticles.insert(std::pair<std::string, CandidatePtr>("leg1", leg1));
-	    inputParticles.insert(std::pair<std::string, CandidatePtr>("leg2", leg2));
-	    inputParticles.insert(std::pair<std::string, CandidatePtr>("met",  met));
-	    std::auto_ptr<NSVfitEventHypothesisBase> nSVfitHypothesis(nSVfitAlgorithm->second->fit(inputParticles, pv));
-	    compositePtrCandidate.addNSVfitSolution(nSVfitHypothesis);
-	    //std::cout << " done." << std::endl;
-	  }
-	}
+      if( pv && beamSpot && trackBuilder && doSVreco ) {
+	vector<TauVertex::Solution> fits = TauVertex::fitVertices<T1,T2>(leg1, leg2, met, *pv, *beamSpot, trackBuilder);
+
+//--- get the best solution
+	TauVertex::Solution bestfit = fits[0];
+
+	compositePtrCandidate.setSVNLL(bestfit.nllOfFit);
+	compositePtrCandidate.setVertexLeg1(bestfit.sv1);
+	compositePtrCandidate.setVertexLeg2(bestfit.sv2);
+	compositePtrCandidate.setPV(bestfit.pv);
+	compositePtrCandidate.setNuSVLeg1(bestfit.leg1NuP4);
+	compositePtrCandidate.setNuSVLeg2(bestfit.leg2NuP4);
+	compositePtrCandidate.setVisSVLeg1(bestfit.leg1VisP4);
+	compositePtrCandidate.setVisSVLeg2(bestfit.leg2VisP4);
+
+	compositePtrCandidate.computeSVTotal();
       }
     } else {
       compositePtrCandidate.setCollinearApproxQuantities(reco::Candidate::LorentzVector(0,0,0,0), -1, -1, false, 0);
     }
-
+ 
 //--- compute gen. level quantities
     if ( genParticles ) {
       compGenQuantities(compositePtrCandidate, genParticles);
@@ -202,62 +114,82 @@ class CompositePtrCandidateT1T2MEtAlgorithm
 
 //--- set compositePtr four-momentum
 //    (depending on recoMode configuration parameter)
-    if ( recoMode == "collinearApprox" ) {
+    if ( recoMode_ == "collinearApprox" ) {
       if ( met.isNonnull() ) {
         compositePtrCandidate.setP4(compositePtrCandidate.p4CollinearApprox());
       } else {
         edm::LogError ("buildCompositePtrCandidate")
 	  << " Failed to set four-momentum:"
-	  << " recoMode = " << recoMode << " requires MET pointer to be valid !!";
+	  << " recoMode = " << recoMode_ << " requires MET pointer to be valid !!";
       }
-    } else if ( recoMode == "ImprovedCollinearApprox" ) {
+    } else if ( recoMode_ == "ImprovedCollinearApprox" ) {
       if ( met.isNonnull() ) {
 	compositePtrCandidate.setP4(compositePtrCandidate.p4ImprovedCollinearApprox());
       } else {
-	edm::LogError ("buildCompositePtrCandidate")
+	edm::LogError ("buildCompositePtrCandidate") 
 	  << " Failed to set four-momentum:"
-	  << " recoMode = " << recoMode << " requires MET pointer to be valid !!";
+	  << " recoMode = " << recoMode_ << " requires MET pointer to be valid !!";
+      } 
+    }  else if ( recoMode_ == "secondaryVertexFit" ) {
+      if ( met.isNonnull() ) {
+	compositePtrCandidate.setP4(compositePtrCandidate.p4SVFit());
+      } else {
+	edm::LogError ("buildCompositePtrCandidate") 
+	  << " Failed to set four-momentum:"
+	  << " recoMode = " << recoMode_ << " requires MET pointer to be valid !!";
       }
-    }  else if ( recoMode == "cdfMethod" ) {
+    }  else if ( recoMode_ == "cdfMethod" ) {
       if ( met.isNonnull() ) {
 	compositePtrCandidate.setP4(compositePtrCandidate.p4CDFmethod());
       } else {
-	edm::LogError ("buildCompositePtrCandidate")
+	edm::LogError ("buildCompositePtrCandidate") 
 	  << " Failed to set four-momentum:"
-	  << " recoMode = " << recoMode << " requires MET pointer to be valid !!";
+	  << " recoMode = " << recoMode_ << " requires MET pointer to be valid !!";
       }
-    } else if ( recoMode == "" ) {
+    } else if ( recoMode_ == "" ) {
       compositePtrCandidate.setP4(compositePtrCandidate.p4Vis());
+    } else if ( recoMode_ == "secondaryVertexFit" ) {
+       if ( met.isNonnull() && pv && beamSpot )
+          compositePtrCandidate.setP4(compositePtrCandidate.p4SVFit());
+       else {
+          edm::LogError("buildCompositePtrCandidate") 
+	    << "Failed to set four-momnetum"
+	    << " recoMode = " << recoMode_ << " requires MET, PrimaryVertex and Beamspot to be valid !!";
+       }
     } else {
-      edm::LogError ("buildCompositePtrCandidate")
+      edm::LogError ("buildCompositePtrCandidate") 
 	<< " Failed to set four-momentum:"
-	<< " recoMode = " << recoMode << " undefined !!";
-    }
-
-    compositePtrCandidate.recoMode_ = recoMode;
-
+	<< " recoMode = " << recoMode_ << " undefined !!";
+    }  
+    
     return compositePtrCandidate;
   }
 
- private:
-
+ private: 
+  
   void compGenQuantities(CompositePtrCandidateT1T2MEt<T1,T2>& compositePtrCandidate, const reco::GenParticleCollection* genParticles)
   {
-    const reco::GenParticle* genLeg1 = findGenParticle(compositePtrCandidate.leg1()->p4(), *genParticles, 0.5, -1,
-						       &genParticleMatchPdgId_, false);
+    const reco::GenParticle* genLeg1 = findGenParticle(compositePtrCandidate.leg1()->p4(), *genParticles, 0.5, -1);
     if ( genLeg1 ) {
-      compositePtrCandidate.setPrimaryVertexPosGen(genLeg1->vertex());
-      compositePtrCandidate.setDecayVertexPosLeg1gen(getDecayVertex(genLeg1));
+      // TODO: is vertex definition consistent ??
+      // Setup PV 
+      compositePtrCandidate.setPVGen(genLeg1->vertex());
+      if(genLeg1->daughter(0))
+         compositePtrCandidate.setVertexLeg1Gen(genLeg1->daughter(0)->vertex());
+      //std::cout << "genLeg1: Pt = " << genLeg1->pt() << ", eta = " << genLeg1->eta() << "," 
+      //	  << " phi = " << genLeg1->phi()*180./TMath::Pi() << std::endl;
       compositePtrCandidate.setP4Leg1gen(genLeg1->p4());
-      compositePtrCandidate.setP4VisLeg1gen(getVisMomentum(genLeg1));
+      compositePtrCandidate.setP4VisLeg1gen(getVisMomentum(genLeg1, genParticles));
     }
-
-    const reco::GenParticle* genLeg2 = findGenParticle(compositePtrCandidate.leg2()->p4(), *genParticles, 0.5, -1,
-						       &genParticleMatchPdgId_, false);
+    
+    const reco::GenParticle* genLeg2 = findGenParticle(compositePtrCandidate.leg2()->p4(), *genParticles, 0.5, -1);
     if ( genLeg2 ) {
-      compositePtrCandidate.setDecayVertexPosLeg2gen(getDecayVertex(genLeg2));
+      if(genLeg2->daughter(0))
+         compositePtrCandidate.setVertexLeg2Gen(genLeg2->daughter(0)->vertex());
+      //std::cout << "genLeg2: Pt = " << genLeg2->pt() << ", eta = " << genLeg2->eta() << "," 
+      //	  << " phi = " << genLeg2->phi()*180./TMath::Pi() << std::endl;
       compositePtrCandidate.setP4Leg2gen(genLeg2->p4());
-      compositePtrCandidate.setP4VisLeg2gen(getVisMomentum(genLeg2));
+      compositePtrCandidate.setP4VisLeg2gen(getVisMomentum(genLeg2, genParticles));
     }
   }
   void compCollinearApprox(CompositePtrCandidateT1T2MEt<T1,T2>& compositePtrCandidate,
@@ -265,11 +197,18 @@ class CompositePtrCandidateT1T2MEtAlgorithm
 			   const reco::Candidate::LorentzVector& leg2,
 			   double metPx, double metPy)
   {
-    double x1, x2;
-    compX1X2byCollinearApprox(x1, x2, leg1.px(), leg1.py(), leg2.px(), leg2.py(), metPx, metPy);
-
-    bool isX1withinPhysRange, isX2withinPhysRange;
+    double x1_numerator = leg1.px()*leg2.py() - leg2.px()*leg1.py();
+    double x1_denominator = leg2.py()*(leg1.px() + metPx) - leg2.px()*(leg1.py() + metPy);
+    double x1 = ( x1_denominator != 0. ) ? x1_numerator/x1_denominator : -1.;
+    //std::cout << "x1 = " << x1 << std::endl;
+    bool isX1withinPhysRange = true;
     double x1phys = getPhysX(x1, isX1withinPhysRange);
+
+    double x2_numerator = x1_numerator;
+    double x2_denominator = leg1.px()*(leg2.py() + metPy) - leg1.py()*(leg2.px() + metPx);
+    double x2 = ( x2_denominator != 0. ) ? x2_numerator/x2_denominator : -1.;
+    //std::cout << "x2 = " << x2 << std::endl;
+    bool isX2withinPhysRange = true;
     double x2phys = getPhysX(x2, isX2withinPhysRange);
 
     if ( x1phys != 0. && x2phys != 0. ) {
@@ -283,14 +222,20 @@ class CompositePtrCandidateT1T2MEtAlgorithm
   /// compute the diTau mass in improved collinear approximation;
   /// this new algorithm allows to recover events for which
   /// the collinear approximation fails
+
   void compImprovedCollinearApprox(CompositePtrCandidateT1T2MEt<T1,T2>& compositePtrCandidate,
 				   const reco::Candidate::LorentzVector& leg1,
 				   const reco::Candidate::LorentzVector& leg2,
 				   double metPx, double metPy)
     {
-      double x1, x2;
-      compX1X2byCollinearApprox(x1, x2, leg1.px(), leg1.py(), leg2.px(), leg2.py(), metPx, metPy);
-
+      double x1_numerator = leg1.px()*leg2.py() - leg2.px()*leg1.py();
+      double x1_denominator = leg2.py()*(leg1.px() + metPx) - leg2.px()*(leg1.py() + metPy);
+      double x1 = ( x1_denominator != 0. ) ? x1_numerator/x1_denominator : -1.;
+      
+      double x2_numerator = x1_numerator;
+      double x2_denominator = leg1.px()*(leg2.py() + metPy) - leg1.py()*(leg2.px() + metPx);
+      double x2 = ( x2_denominator != 0. ) ? x2_numerator/x2_denominator : -1.;
+      
       /// define scalar products useful for later computations
       double sp1 = (leg1.px()*metPx + leg1.py()*metPy);
       double sp2 = (leg2.px()*metPx + leg2.py()*metPy);
@@ -304,7 +249,7 @@ class CompositePtrCandidateT1T2MEtAlgorithm
       /// define the angular windows to accept the events
       bool collinear_leg1 = (cos1 >= 0.940);
       bool collinear_leg2 = (cos2 >= 0.940);
-      bool backToback = (cos( leg1.phi()-leg2.phi() ) < -0.90 );
+      bool backToback = (cos( leg1.phi()-leg2.phi() ) < -0.90 ); 
       /// collinear approximation
       if ( (x1 > 0. && x1 < 1.) &&  (x2 > 0. && x2 < 1.) ) {
 	reco::Candidate::LorentzVector p4 = leg1/x1 + leg2/x2;
@@ -331,10 +276,10 @@ class CompositePtrCandidateT1T2MEtAlgorithm
       /// rescue back-to-back events using the known mean tau-energy fraction carried away
       /// by the neutrino in the tau -> l + nu_l + nu_tau decay;
       /// the first condition is a XOR between A=(x1 > 0. && x1 < 1.) and B=(x2 > 0. && x2 < 1.)
-      else if ( ( (!(x1 > 0. && x1 < 1.) && (x2 > 0. && x2 < 1.)) || ((x1 > 0. && x1 < 1.) && !(x2 > 0. && x2 < 1.))  ) &&
-		(collinear_leg1 || collinear_leg2) &&
+      else if ( ( (!(x1 > 0. && x1 < 1.) && (x2 > 0. && x2 < 1.)) || ((x1 > 0. && x1 < 1.) && !(x2 > 0. && x2 < 1.))  ) && 
+		(collinear_leg1 || collinear_leg2) && 
 		backToback ){
-
+	
 	if(collinear_leg1){
 	  Enu1= 13./7.*leg1.pt();
 	  Enu2 = Enu1-module_Met;
@@ -351,17 +296,19 @@ class CompositePtrCandidateT1T2MEtAlgorithm
 	  reco::Candidate::LorentzVector p4 = leg1/x1 + leg2/x2;
 	  compositePtrCandidate.setImprovedCollinearApproxQuantities(p4, -99, 99, 1.0, true, 3);
 	}
-
+	
       }
       /// if none of the previous conditions has been fulfilled,
       /// don't reconstruct the diTau
       else {
 	compositePtrCandidate.setImprovedCollinearApproxQuantities(reco::Candidate::LorentzVector(0,0,0,0), -1, -1, 1.0, false, 0);
       }
-
+      
     }
   //////////////////////////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////////
+  
+
 
   void compZeta(CompositePtrCandidateT1T2MEt<T1,T2>& compositePtrCandidate,
 		const reco::Candidate::LorentzVector& leg1,
@@ -402,18 +349,20 @@ class CompositePtrCandidateT1T2MEtAlgorithm
     double pZeta = px*zetaX + py*zetaY;
 
     //std::cout << " metPhi = " << normalizedPhi(atan2(metPy, metPx))*180./TMath::Pi() << std::endl;
-
+    
     if ( verbosity_ ) {
       std::cout << "<CompositePtrCandidateT1T2MEtAlgorithm::compZeta>:" << std::endl;
       std::cout << " pZetaVis = " << pZetaVis << std::endl;
       std::cout << " pZeta = " << pZeta << std::endl;
     }
 
+    //assert(pZetaVis >= 0.);
+
     compositePtrCandidate.setPzeta(pZeta);
     compositePtrCandidate.setPzetaVis(pZetaVis);
   }
-  reco::Candidate::LorentzVector compP4CDFmethod(const reco::Candidate::LorentzVector& leg1,
-						 const reco::Candidate::LorentzVector& leg2,
+  reco::Candidate::LorentzVector compP4CDFmethod(const reco::Candidate::LorentzVector& leg1, 
+						 const reco::Candidate::LorentzVector& leg2, 
 						 double metPx, double metPy)
   {
     double px = leg1.px() + leg2.px() + metPx;
@@ -423,8 +372,8 @@ class CompositePtrCandidateT1T2MEtAlgorithm
     reco::Candidate::LorentzVector p4(px, py, pz, e);
     return p4;
   }
-  double compMt(const reco::Candidate::LorentzVector& leg1,
-		const reco::Candidate::LorentzVector& leg2,
+  double compMt(const reco::Candidate::LorentzVector& leg1, 
+		const reco::Candidate::LorentzVector& leg2, 
 		double metPx, double metPy)
   {
     double px = leg1.px() + leg2.px() + metPx;
@@ -437,7 +386,7 @@ class CompositePtrCandidateT1T2MEtAlgorithm
     }
     return TMath::Sqrt(mt2);
   }
-  double compMt(const reco::Candidate::LorentzVector& visParticle,
+  double compMt(const reco::Candidate::LorentzVector& visParticle, 
 		double metPx, double metPy)
   {
     double px = visParticle.px() + metPx;
@@ -451,14 +400,11 @@ class CompositePtrCandidateT1T2MEtAlgorithm
     return TMath::Sqrt(mt2);
   }
 
+  std::string recoMode_;
   int verbosity_;
   std::string scaleFuncImprovedCollinearApprox_;
-  PFMEtSignInterface* pfMEtSign_;
-  std::map<std::string, NSVfitAlgorithmBase*> nSVfitAlgorithms_;
   TF1* scaleFunc_;
-  typedef std::vector<int> vint;
-  vint genParticleMatchPdgId_;
 };
 
-#endif
+#endif 
 

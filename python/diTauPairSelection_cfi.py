@@ -1,5 +1,4 @@
 import FWCore.ParameterSet.Config as cms
-import copy
 
 #--------------------------------------------------------------------------------  
 # produce collections of tau-jet + tau-jet pairs passing selection criteria
@@ -14,50 +13,15 @@ selectedDiTauPairsAntiOverlapVeto = cms.EDFilter("PATDiTauPairSelector",
     filter = cms.bool(False)
 )
 
-# require the two tau-jets not to be back-to-back
+# require muon and tau not to be back-to-back
 selectedDiTauPairsAcoplanarity = cms.EDFilter("PATDiTauPairSelector",
-    #cut = cms.string('(dPhi1MET < 2.4) | (dPhi2MET < 2.4)'),
-    cut = cms.string('(dPhi1MET < 3.2) | (dPhi2MET < 3.2)'), # CV: cut disabled for now...
-    filter = cms.bool(False)
-)
-
-# require missing transverse momentum to point
-# in the direction of visible tau decay products
-selectedDiTauPairsPzetaDiff = cms.EDFilter("PATDiTauPairSelector",
-    cut = cms.string('(pZeta - 1.5*pZetaVis) > -20.'),
+    cut = cms.string('(dPhi1MET < 2.4) | (dPhi2MET < 2.4)'),
     filter = cms.bool(False)
 )
 
 # require muon and tau to form a zero-charge pair
-# (selection applied in signal region)
 selectedDiTauPairsZeroCharge = cms.EDFilter("PATDiTauPairSelector",
     cut = cms.string('charge = 0'),
+    #cut = cms.string('(leg1.leadTrack.charge + leg2.leadTrack.charge) = 0'), # NOTE: to be used for background studies only !!
     filter = cms.bool(False)
-)
-
-# require muon and tau to form a non-zero-charge pair
-# (selection applied in background dominated control region)
-selectedDiTauPairsNonZeroCharge = cms.EDFilter("PATDiTauPairSelector",
-    cut = cms.string('charge != 0'),
-    filter = cms.bool(False)
-)
-
-# define additional collections of tau-jet + tau-jet candidates
-# with loose lead. track Pt, track isolation and ECAL isolation applied on second leg
-# (NOTE: to be used for the purpose of factorizing efficiencies
-#        of tau id. criteria from other event selection criteria,
-#        in order to avoid problems with limited Monte Carlo statistics)
-
-selectedDiTauPairsAntiOverlapVetoLoose2ndTau = copy.deepcopy(selectedDiTauPairsAntiOverlapVeto)
-
-selectedDiTauPairsAcoplanarityLoose2ndTau = copy.deepcopy(selectedDiTauPairsAcoplanarity)
-
-selectedDiTauPairsPzetaDiffLoose2ndTau = copy.deepcopy(selectedDiTauPairsPzetaDiff)
-
-selectedDiTauPairsZeroChargeLoose2ndTau = selectedDiTauPairsZeroCharge.clone(
-    cut = cms.string('(leg1.charge + leg2.leadPFChargedHadrCand.charge) = 0')
-)
-
-selectedDiTauPairsNonZeroChargeLoose2ndTau = selectedDiTauPairsNonZeroCharge.clone(
-    cut = cms.string('(leg1.charge + leg2.leadPFChargedHadrCand.charge) != 0')
 )

@@ -12,36 +12,39 @@ from TauAnalysis.CandidateTools.tools.objSelConfigurator import *
 
 selectedMuTauPairsForAHtoMuTauAntiOverlapVeto = copy.deepcopy(selectedMuTauPairsAntiOverlapVeto)
 
+selectedMuTauPairsForAHtoMuTauZeroCharge = copy.deepcopy(selectedMuTauPairsZeroCharge)
+
 selectedMuTauPairsForAHtoMuTauMt1MET = copy.deepcopy(selectedMuTauPairsMt1MET)
 
 selectedMuTauPairsForAHtoMuTauPzetaDiff = copy.deepcopy(selectedMuTauPairsPzetaDiff)
 
-selectedMuTauPairsForAHtoMuTauZeroCharge = copy.deepcopy(selectedMuTauPairsZeroCharge)
+# require muon and tau-jet not to be back-to-back
+# (dPhi(muon-tau) < 160 degrees, such that collinear approximation provides good mass resolution)
+selectedMuTauPairsForAHtoMuTauNonBackToBack = cms.EDFilter("PATMuTauPairSelector",
+    cut = cms.string('dPhi12 < 2.79'),
+    filter = cms.bool(False)
+)
 
-patMuTauPairSelConfiguratorForAHtoMuTauOS = objSelConfigurator(
+# require missing transverse momentum to point
+# in the direction of visible tau decay products
+selectedMuTauPairsForAHtoMuTauValidCollinearApprox = cms.EDFilter("PATMuTauPairSelector",
+    cut = cms.string('collinearApproxIsValid()'),
+    filter = cms.bool(False)
+)
+
+patMuTauPairSelConfiguratorForAHtoMuTau = objSelConfigurator(
     [ selectedMuTauPairsForAHtoMuTauAntiOverlapVeto,
+      selectedMuTauPairsForAHtoMuTauZeroCharge,
       selectedMuTauPairsForAHtoMuTauMt1MET,
       selectedMuTauPairsForAHtoMuTauPzetaDiff,
-      selectedMuTauPairsForAHtoMuTauZeroCharge ],
+      selectedMuTauPairsForAHtoMuTauNonBackToBack,
+      selectedMuTauPairsForAHtoMuTauValidCollinearApprox ],
     src = "allMuTauPairs",
     pyModuleName = __name__,
     doSelIndividual = True
 )
 
-selectMuTauPairsForAHtoMuTauOS = patMuTauPairSelConfiguratorForAHtoMuTauOS.configure(pyNameSpace = locals())
-
-selectedMuTauPairsForAHtoMuTauNonZeroCharge = copy.deepcopy(selectedMuTauPairsNonZeroCharge)
-
-patMuTauPairSelConfiguratorForAHtoMuTauSS = objSelConfigurator(
-    [ selectedMuTauPairsForAHtoMuTauNonZeroCharge ],
-    src = "selectedMuTauPairsForAHtoMuTauPzetaDiffCumulative",
-    pyModuleName = __name__,
-    doSelIndividual = True
-)
-
-selectMuTauPairsForAHtoMuTauSS = patMuTauPairSelConfiguratorForAHtoMuTauSS.configure(pyNameSpace = locals())
-
-selectMuTauPairsForAHtoMuTau = cms.Sequence(selectMuTauPairsForAHtoMuTauOS * selectMuTauPairsForAHtoMuTauSS)
+selectMuTauPairsForAHtoMuTau = patMuTauPairSelConfiguratorForAHtoMuTau.configure(pyNameSpace = locals())
 
 # define additional collections of muon + tau-jet candidates
 # with loose track and ECAL isolation applied on muon leg
@@ -51,37 +54,27 @@ selectMuTauPairsForAHtoMuTau = cms.Sequence(selectMuTauPairsForAHtoMuTauOS * sel
 
 selectedMuTauPairsForAHtoMuTauAntiOverlapVetoLooseMuonIsolation = copy.deepcopy(selectedMuTauPairsForAHtoMuTauAntiOverlapVeto)
 
+selectedMuTauPairsForAHtoMuTauZeroChargeLooseMuonIsolation = copy.deepcopy(selectedMuTauPairsForAHtoMuTauZeroCharge)
+
 selectedMuTauPairsForAHtoMuTauMt1METlooseMuonIsolation = copy.deepcopy(selectedMuTauPairsForAHtoMuTauMt1MET)
 
 selectedMuTauPairsForAHtoMuTauPzetaDiffLooseMuonIsolation = copy.deepcopy(selectedMuTauPairsForAHtoMuTauPzetaDiff)
 
-selectedMuTauPairsForAHtoMuTauZeroChargeLooseMuonIsolation = copy.deepcopy(selectedMuTauPairsForAHtoMuTauZeroCharge)
+selectedMuTauPairsForAHtoMuTauNonBackToBackLooseMuonIsolation = copy.deepcopy(selectedMuTauPairsForAHtoMuTauNonBackToBack)
 
-patMuTauPairSelConfiguratorForAHtoMuTauLooseMuonIsolationOS = objSelConfigurator(
+selectedMuTauPairsForAHtoMuTauValidCollinearApproxLooseMuonIsolation = copy.deepcopy(selectedMuTauPairsForAHtoMuTauValidCollinearApprox)
+
+patMuTauPairSelConfiguratorForAHtoMuTauLooseMuonIsolation = objSelConfigurator(
     [ selectedMuTauPairsForAHtoMuTauAntiOverlapVetoLooseMuonIsolation,
+      selectedMuTauPairsForAHtoMuTauZeroChargeLooseMuonIsolation,
       selectedMuTauPairsForAHtoMuTauMt1METlooseMuonIsolation,
       selectedMuTauPairsForAHtoMuTauPzetaDiffLooseMuonIsolation,
-      selectedMuTauPairsForAHtoMuTauZeroChargeLooseMuonIsolation ],
+      selectedMuTauPairsForAHtoMuTauNonBackToBackLooseMuonIsolation,
+      selectedMuTauPairsForAHtoMuTauValidCollinearApproxLooseMuonIsolation ],
     src = "allMuTauPairsLooseMuonIsolation",
     pyModuleName = __name__,
     doSelIndividual = True
 )
 
-selectMuTauPairsForAHtoMuTauLooseMuonIsolationOS = \
-  patMuTauPairSelConfiguratorForAHtoMuTauLooseMuonIsolationOS.configure(pyNameSpace = locals())
-
-selectedMuTauPairsForAHtoMuTauNonZeroChargeLooseMuonIsolation = copy.deepcopy(selectedMuTauPairsForAHtoMuTauNonZeroCharge)
-
-patMuTauPairSelConfiguratorForAHtoMuTauLooseMuonIsolationSS = objSelConfigurator(
-    [ selectedMuTauPairsForAHtoMuTauNonZeroChargeLooseMuonIsolation ],
-    src = "selectedMuTauPairsForAHtoMuTauPzetaDiffLooseMuonIsolationCumulative",
-    pyModuleName = __name__,
-    doSelIndividual = True
-)
-
-selectMuTauPairsForAHtoMuTauLooseMuonIsolationSS = \
-  patMuTauPairSelConfiguratorForAHtoMuTauLooseMuonIsolationSS.configure(pyNameSpace = locals())
-
-selectMuTauPairsForAHtoMuTauLooseMuonIsolation = cms.Sequence(
-  selectMuTauPairsForAHtoMuTauLooseMuonIsolationOS * selectMuTauPairsForAHtoMuTauLooseMuonIsolationSS
-)
+selectMuTauPairsForAHtoMuTauLooseMuonIsolation = \
+  patMuTauPairSelConfiguratorForAHtoMuTauLooseMuonIsolation.configure(pyNameSpace = locals())

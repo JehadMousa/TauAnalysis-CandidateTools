@@ -1,412 +1,164 @@
 import FWCore.ParameterSet.Config as cms
 import copy
 
-from TauAnalysis.CandidateTools.tools.objProdConfigurator import *
-from TauAnalysis.CandidateTools.resolutions_cfi import *
-from TauAnalysis.CandidateTools.nSVfitAlgorithmDiTau_cfi import *
-from TauAnalysis.CandidateTools.nSVfitAlgorithmTauDecayKineMC_cfi import *
-from RecoMET.METProducers.METSigParams_cfi import *
-
 #--------------------------------------------------------------------------------
 # produce combinations of tau-jet + tau-jet pairs
 #--------------------------------------------------------------------------------
 
 allDiTauPairs = cms.EDProducer("PATDiTauPairProducer",
     useLeadingTausOnly = cms.bool(False),
-    srcLeg1 = cms.InputTag('cleanPatTaus'),
-    srcLeg2 = cms.InputTag('cleanPatTaus'),
+    srcLeg1 = cms.InputTag('cleanLayer1Taus'),
+    srcLeg2 = cms.InputTag('cleanLayer1Taus'),
     dRmin12 = cms.double(0.3),
-    srcMET = cms.InputTag('patMETs'),
-    srcPrimaryVertex = cms.InputTag("offlinePrimaryVerticesWithBS"),
-    srcBeamSpot = cms.InputTag("offlineBeamSpot"),
-    srcGenParticles = cms.InputTag('genParticles'),                  
+    srcMET = cms.InputTag('layer1METs'),
+    srcGenParticles = cms.InputTag('genParticles'),                                 
     recoMode = cms.string(""),
-    doSVreco = cms.bool(False),                          
     scaleFuncImprovedCollinearApprox = cms.string('1'),                           
     verbosity = cms.untracked.int32(0)
 )
 
 #---------------------------------------------------------------------------------------
-# produce tau-jet + tau-jet pairs with detector acceptance cuts applied on first leg
+# produce tau-jet + tau-jet pairs with tau-jet selection criteria applied on first leg
 #---------------------------------------------------------------------------------------
 
 # require 1st tau candidate to be within geometric acceptance of Pixel + SiTracker detectors
-selectedDiTauPairs1stTauEta21Individual = allDiTauPairs.clone(
-    srcLeg1 = cms.InputTag('selectedPatTausForDiTauEta21Individual')
-)
+selectedDiTauPairs1stTauEta21Individual = copy.deepcopy(allDiTauPairs)
+selectedDiTauPairs1stTauEta21Individual.srcLeg1 = cms.InputTag('selectedLayer1TausEta21Individual')
 
-selectedDiTauPairs1stTauEta21Cumulative = selectedDiTauPairs1stTauEta21Individual.clone(
-    srcLeg1 = cms.InputTag('selectedPatTausForDiTauEta21Cumulative')
-)
+selectedDiTauPairs1stTauEta21Cumulative = copy.deepcopy(selectedDiTauPairs1stTauEta21Individual)
+selectedDiTauPairs1stTauEta21Cumulative.srcLeg1 = cms.InputTag('selectedLayer1TausForDiTauEta21Cumulative')
 
 # require 1st tau candidate to have transverse energy above threshold
-selectedDiTauPairs1stTauPt20Individual = allDiTauPairs.clone(
-    srcLeg1 = cms.InputTag('selectedPatTausForDiTauPt20Individual')
-)
+selectedDiTauPairs1stTauPt20Individual = copy.deepcopy(allDiTauPairs)
+selectedDiTauPairs1stTauPt20Individual.srcLeg1 = cms.InputTag('selectedLayer1TausPt20Individual')
 
-selectedDiTauPairs1stTauPt20Cumulative = selectedDiTauPairs1stTauPt20Individual.clone(
-    srcLeg1 = cms.InputTag('selectedPatTausForDiTauPt20Cumulative')
-)
-
-#----------------------------------------------------------------------------------------
-# produce tau-jet + tau-jet pairs with detector acceptance cuts applied on second leg
-#----------------------------------------------------------------------------------------
-
-# require 2nd tau candidate to be within geometric acceptance of Pixel + SiTracker detectors
-selectedDiTauPairs2ndTauEta21Individual = selectedDiTauPairs1stTauPt20Cumulative.clone(
-    srcLeg2 = cms.InputTag('selectedPatTausForDiTauEta21Individual')
-)    
-
-selectedDiTauPairs2ndTauEta21Cumulative = selectedDiTauPairs1stTauPt20Cumulative.clone(
-    srcLeg2 = cms.InputTag('selectedPatTausForDiTauEta21Cumulative')
-)    
-
-# require 2nd tau candidate to have transverse energy above threshold
-selectedDiTauPairs2ndTauPt20Individual = selectedDiTauPairs1stTauPt20Cumulative.clone(
-    srcLeg2 = cms.InputTag('selectedPatTausForDiTauPt20Individual')
-)    
-
-selectedDiTauPairs2ndTauPt20Cumulative = selectedDiTauPairs1stTauPt20Cumulative.clone(
-    srcLeg2 = cms.InputTag('selectedPatTausForDiTauPt20Cumulative')
-)
-
-#----------------------------------------------------------------------------------------
-# produce tau-jet + tau-jet pairs with tau-jet selection criteria applied on second leg
-#----------------------------------------------------------------------------------------
+selectedDiTauPairs1stTauPt20Cumulative = copy.deepcopy(selectedDiTauPairs1stTauPt20Individual)
+selectedDiTauPairs1stTauPt20Cumulative.srcLeg1 = cms.InputTag('selectedLayer1TausForDiTauPt20Cumulative')
 
 # require 1st tau candidate to have a leading track
 # (track of Pt > 1. GeV within matching cone of size dR = 0.2 around jet-axis)
-selectedDiTauPairs1stTauLeadTrkIndividual = selectedDiTauPairs2ndTauPt20Cumulative.clone(
-    srcLeg1 = cms.InputTag('selectedPatTausForDiTauLeadTrkIndividual')
-)
+selectedDiTauPairs1stTauLeadTrkIndividual = copy.deepcopy(allDiTauPairs)
+selectedDiTauPairs1stTauLeadTrkIndividual.srcLeg1 = cms.InputTag('selectedLayer1TausLeadTrkIndividual')
 
-selectedDiTauPairs1stTauLeadTrkCumulative = selectedDiTauPairs1stTauLeadTrkIndividual.clone(
-    srcLeg1 = cms.InputTag('selectedPatTausForDiTauLeadTrkCumulative')
-)
+selectedDiTauPairs1stTauLeadTrkCumulative = copy.deepcopy(selectedDiTauPairs1stTauLeadTrkIndividual)
+selectedDiTauPairs1stTauLeadTrkCumulative.srcLeg1 = cms.InputTag('selectedLayer1TausForDiTauLeadTrkCumulative')
 
-# require leading track of 1st tau candidate to have Pt > 12. GeV
-selectedDiTauPairs1stTauLeadTrkPtIndividual = selectedDiTauPairs2ndTauPt20Cumulative.clone(
-    srcLeg1 = cms.InputTag('selectedPatTausForDiTau1stLeadTrkPtIndividual')
-)
+# require leading track of 1st tau candidate to have Pt > 5. GeV
+selectedDiTauPairs1stTauLeadTrkPtIndividual = copy.deepcopy(allDiTauPairs)
+selectedDiTauPairs1stTauLeadTrkPtIndividual.srcLeg1 = cms.InputTag('selectedLayer1TausLeadTrkPtIndividual')
 
-selectedDiTauPairs1stTauLeadTrkPtCumulative = selectedDiTauPairs1stTauLeadTrkPtIndividual.clone(
-    srcLeg1 = cms.InputTag('selectedPatTausForDiTau1stLeadTrkPtCumulative')
-)
-
-# require 1st tau candidate to pass TaNC discriminator for 0.25% nominal fake-rate
-selectedDiTauPairs1stTauTaNCdiscrIndividual = selectedDiTauPairs2ndTauPt20Cumulative.clone(
-    srcLeg1 = cms.InputTag('selectedPatTausForDiTau1stTaNCdiscrIndividual')
-)
-
-selectedDiTauPairs1stTauTaNCdiscrCumulative = selectedDiTauPairs1stTauTaNCdiscrIndividual.clone(
-    srcLeg1 = cms.InputTag('selectedPatTausForDiTau1stTaNCdiscrCumulative')
-)
+selectedDiTauPairs1stTauLeadTrkPtCumulative = copy.deepcopy(selectedDiTauPairs1stTauLeadTrkPtIndividual)
+selectedDiTauPairs1stTauLeadTrkPtCumulative.srcLeg1 = cms.InputTag('selectedLayer1TausForDiTauLeadTrkPtCumulative')
 
 # require 1st tau candidate to have no tracks of Pt > 1. GeV
 # in isolation cone of size dR = 0.8, surrounding signal cone of size dR = 5./Et
-selectedDiTauPairs1stTauTrkIsoIndividual = selectedDiTauPairs2ndTauPt20Cumulative.clone(
-    srcLeg1 = cms.InputTag('selectedPatTausForDiTau1stTrkIsoIndividual')
-)
+selectedDiTauPairs1stTauTrkIsoIndividual = copy.deepcopy(allDiTauPairs)
+selectedDiTauPairs1stTauTrkIsoIndividual.srcLeg1 = cms.InputTag('selectedLayer1TausTrkIsoIndividual')
 
-selectedDiTauPairs1stTauTrkIsoCumulative = selectedDiTauPairs1stTauTrkIsoIndividual.clone(
-    srcLeg1 = cms.InputTag('selectedPatTausForDiTau1stTrkIsoCumulative')
-)
+selectedDiTauPairs1stTauTrkIsoCumulative = copy.deepcopy(selectedDiTauPairs1stTauTrkIsoIndividual)
+selectedDiTauPairs1stTauTrkIsoCumulative.srcLeg1 = cms.InputTag('selectedLayer1TausForDiTauTrkIsoCumulative')
 
 # require 1st tau candidate to be isolated
 # with respect to energy deposits in ECAL
-selectedDiTauPairs1stTauEcalIsoIndividual = selectedDiTauPairs2ndTauPt20Cumulative.clone(
-    srcLeg1 = cms.InputTag('selectedPatTausForDiTau1stEcalIsoIndividual')
-)
+selectedDiTauPairs1stTauEcalIsoIndividual = copy.deepcopy(allDiTauPairs)
+selectedDiTauPairs1stTauEcalIsoIndividual.srcLeg1 = cms.InputTag('selectedLayer1TausEcalIsoIndividual')
 
-selectedDiTauPairs1stTauEcalIsoCumulative = selectedDiTauPairs1stTauEcalIsoIndividual.clone(
-    srcLeg1 = cms.InputTag('selectedPatTausForDiTau1stEcalIsoCumulative')
-)
+selectedDiTauPairs1stTauEcalIsoCumulative = copy.deepcopy(selectedDiTauPairs1stTauEcalIsoIndividual)
+selectedDiTauPairs1stTauEcalIsoCumulative.srcLeg1 = cms.InputTag('selectedLayer1TausForDiTauEcalIsoCumulative')
 
 # require 1st tau candidate to have either one or three tracks within signal cone
-selectedDiTauPairs1stTauProngIndividual = selectedDiTauPairs2ndTauPt20Cumulative.clone(
-    srcLeg1 = cms.InputTag('selectedPatTausForDiTau1stProngIndividual')
-)
+selectedDiTauPairs1stTauProngIndividual = copy.deepcopy(allDiTauPairs)
+selectedDiTauPairs1stTauProngIndividual.srcLeg1 = cms.InputTag('selectedLayer1TausProngIndividual')
 
-selectedDiTauPairs1stTauProngCumulative = selectedDiTauPairs1stTauProngIndividual.clone(
-    srcLeg1 = cms.InputTag('selectedPatTausForDiTau1stProngCumulative')
-)
+selectedDiTauPairs1stTauProngCumulative = copy.deepcopy(selectedDiTauPairs1stTauProngIndividual)
+selectedDiTauPairs1stTauProngCumulative.srcLeg1 = cms.InputTag('selectedLayer1TausForDiTauProngCumulative')
 
 # require 1st tau candidate to have charge either +1 or -1
 # (computed as sum of charges of tracks within signal cone)
-selectedDiTauPairs1stTauChargeIndividual = selectedDiTauPairs2ndTauPt20Cumulative.clone(
-    srcLeg1 = cms.InputTag('selectedPatTausForDiTau1stChargeIndividual')
-)
+selectedDiTauPairs1stTauChargeIndividual = copy.deepcopy(allDiTauPairs)
+selectedDiTauPairs1stTauChargeIndividual.srcLeg1 = cms.InputTag('selectedLayer1TausChargeIndividual')
 
-selectedDiTauPairs1stTauChargeCumulative = selectedDiTauPairs1stTauChargeIndividual.clone(
-    srcLeg1 = cms.InputTag('selectedPatTausForDiTau1stChargeCumulative')
-)
-
-# require 1st tau candidate to pass muon veto
-selectedDiTauPairs1stTauMuonVetoIndividual = selectedDiTauPairs2ndTauPt20Cumulative.clone(
-    srcLeg1 = cms.InputTag('selectedPatTausForDiTau1stMuonVetoIndividual')
-)
-
-selectedDiTauPairs1stTauMuonVetoCumulative = selectedDiTauPairs1stTauMuonVetoIndividual.clone(
-    srcLeg1 = cms.InputTag('selectedPatTausForDiTau1stMuonVetoCumulative')
-)
-
-# require 1st tau candidate to pass electron veto
-selectedDiTauPairs1stTauElectronVetoIndividual = selectedDiTauPairs2ndTauPt20Cumulative.clone(
-    srcLeg1 = cms.InputTag('selectedPatTausForDiTau1stElectronVetoIndividual')
-)
-
-selectedDiTauPairs1stTauElectronVetoCumulative = selectedDiTauPairs1stTauElectronVetoIndividual.clone(
-    srcLeg1 = cms.InputTag('selectedPatTausForDiTau1stElectronVetoCumulative')
-)
+selectedDiTauPairs1stTauChargeCumulative = copy.deepcopy(selectedDiTauPairs1stTauChargeIndividual)
+selectedDiTauPairs1stTauChargeCumulative.srcLeg1 = cms.InputTag('selectedLayer1TausForDiTauChargeCumulative')
 
 #----------------------------------------------------------------------------------------
 # produce tau-jet + tau-jet pairs with tau-jet selection criteria applied on second leg
 #----------------------------------------------------------------------------------------
 
+# require 2nd tau candidate to be within geometric acceptance of Pixel + SiTracker detectors
+selectedDiTauPairs2ndTauEta21Individual = copy.deepcopy(selectedDiTauPairs1stTauChargeCumulative)
+selectedDiTauPairs2ndTauEta21Individual.srcLeg2 = cms.InputTag('selectedLayer1TausEta21Individual')
+
+selectedDiTauPairs2ndTauEta21Cumulative = copy.deepcopy(selectedDiTauPairs2ndTauEta21Individual)
+selectedDiTauPairs2ndTauEta21Cumulative.srcLeg2 = cms.InputTag('selectedLayer1TausForDiTauEta21Cumulative')
+
+# require 2nd tau candidate to have transverse energy above threshold
+selectedDiTauPairs2ndTauPt20Individual = copy.deepcopy(selectedDiTauPairs1stTauChargeCumulative)
+selectedDiTauPairs2ndTauPt20Individual.srcLeg2 = cms.InputTag('selectedLayer1TausPt20Individual')
+
+selectedDiTauPairs2ndTauPt20Cumulative = copy.deepcopy(selectedDiTauPairs1stTauPt20Individual)
+selectedDiTauPairs2ndTauPt20Cumulative.srcLeg2 = cms.InputTag('selectedLayer1TausForDiTauPt20Cumulative')
+
 # require 2nd tau candidate to have a leading track
 # (track of Pt > 1. GeV within matching cone of size dR = 0.2 around jet-axis)
-selectedDiTauPairs2ndTauLeadTrkIndividual = selectedDiTauPairs1stTauElectronVetoCumulative.clone(
-    srcLeg2 = cms.InputTag('selectedPatTausForDiTauLeadTrkIndividual')
-)    
+selectedDiTauPairs2ndTauLeadTrkIndividual = copy.deepcopy(selectedDiTauPairs1stTauChargeCumulative)
+selectedDiTauPairs2ndTauLeadTrkIndividual.srcLeg2 = cms.InputTag('selectedLayer1TausLeadTrkIndividual')
 
-selectedDiTauPairs2ndTauLeadTrkCumulative = selectedDiTauPairs1stTauElectronVetoCumulative.clone(
-    srcLeg2 = cms.InputTag('selectedPatTausForDiTauLeadTrkCumulative')
-)    
+selectedDiTauPairs2ndTauLeadTrkCumulative = copy.deepcopy(selectedDiTauPairs1stTauLeadTrkIndividual)
+selectedDiTauPairs2ndTauLeadTrkCumulative.srcLeg2 = cms.InputTag('selectedLayer1TausForDiTauLeadTrkCumulative')
 
-# require leading track of 2nd tau candidate to have Pt > 8. GeV
-selectedDiTauPairs2ndTauLeadTrkPtIndividual = selectedDiTauPairs1stTauElectronVetoCumulative.clone(
-    srcLeg2 = cms.InputTag('selectedPatTausForDiTau2ndLeadTrkPtIndividual'),
-    
-)    
+# require leading track of 2nd tau candidate to have Pt > 5. GeV
+selectedDiTauPairs2ndTauLeadTrkPtIndividual = copy.deepcopy(selectedDiTauPairs1stTauChargeCumulative)
+selectedDiTauPairs2ndTauLeadTrkPtIndividual.srcLeg2 = cms.InputTag('selectedLayer1TausLeadTrkPtIndividual')
 
-selectedDiTauPairs2ndTauLeadTrkPtCumulative = selectedDiTauPairs1stTauElectronVetoCumulative.clone(
-    srcLeg2 = cms.InputTag('selectedPatTausForDiTau2ndLeadTrkPtCumulative')
-)                           
-
-# require 2nd tau candidate to pass TaNC discriminator for 0.25% nominal fake-rate
-selectedDiTauPairs2ndTauTaNCdiscrIndividual = selectedDiTauPairs1stTauElectronVetoCumulative.clone(
-    srcLeg2 = cms.InputTag('selectedPatTausForDiTau2ndTaNCdiscrIndividual')
-)
-
-selectedDiTauPairs2ndTauTaNCdiscrCumulative = selectedDiTauPairs1stTauElectronVetoCumulative.clone(
-    srcLeg2 = cms.InputTag('selectedPatTausForDiTau2ndTaNCdiscrCumulative')
-)
+selectedDiTauPairs2ndTauLeadTrkPtCumulative = copy.deepcopy(selectedDiTauPairs1stTauLeadTrkPtIndividual)
+selectedDiTauPairs2ndTauLeadTrkPtCumulative.srcLeg2 = cms.InputTag('selectedLayer1TausForDiTauLeadTrkPtCumulative')
 
 # require 2nd tau candidate to have no tracks of Pt > 1. GeV
 # in isolation cone of size dR = 0.8, surrounding signal cone of size dR = 5./Et
-selectedDiTauPairs2ndTauTrkIsoIndividual = selectedDiTauPairs1stTauElectronVetoCumulative.clone(
-    srcLeg2 = cms.InputTag('selectedPatTausForDiTau2ndTrkIsoIndividual')
-)    
+selectedDiTauPairs2ndTauTrkIsoIndividual = copy.deepcopy(selectedDiTauPairs1stTauChargeCumulative)
+selectedDiTauPairs2ndTauTrkIsoIndividual.srcLeg2 = cms.InputTag('selectedLayer1TausTrkIsoIndividual')
 
-selectedDiTauPairs2ndTauTrkIsoCumulative = selectedDiTauPairs1stTauElectronVetoCumulative.clone(
-    srcLeg2 = cms.InputTag('selectedPatTausForDiTau2ndTrkIsoCumulative')
-)    
+selectedDiTauPairs2ndTauTrkIsoCumulative = copy.deepcopy(selectedDiTauPairs1stTauTrkIsoIndividual)
+selectedDiTauPairs2ndTauTrkIsoCumulative.srcLeg2 = cms.InputTag('selectedLayer1TausForDiTauTrkIsoCumulative')
 
 # require 2nd tau candidate to be isolated
 # with respect to energy deposits in ECAL
-selectedDiTauPairs2ndTauEcalIsoIndividual = selectedDiTauPairs1stTauElectronVetoCumulative.clone(
-    srcLeg2 = cms.InputTag('selectedPatTausForDiTau2ndEcalIsoIndividual')
-)    
+selectedDiTauPairs2ndTauEcalIsoIndividual = copy.deepcopy(selectedDiTauPairs1stTauChargeCumulative)
+selectedDiTauPairs2ndTauEcalIsoIndividual.srcLeg2 = cms.InputTag('selectedLayer1TausEcalIsoIndividual')
 
-selectedDiTauPairs2ndTauEcalIsoCumulative = selectedDiTauPairs1stTauElectronVetoCumulative.clone(
-    srcLeg2 = cms.InputTag('selectedPatTausForDiTau2ndEcalIsoCumulative')
-)    
+selectedDiTauPairs2ndTauEcalIsoCumulative = copy.deepcopy(selectedDiTauPairs1stTauEcalIsoIndividual)
+selectedDiTauPairs2ndTauEcalIsoCumulative.srcLeg2 = cms.InputTag('selectedLayer1TausForDiTauEcalIsoCumulative')
 
 # require 2nd tau candidate to have either one or three tracks within signal cone
-selectedDiTauPairs2ndTauProngIndividual = selectedDiTauPairs1stTauElectronVetoCumulative.clone(
-    srcLeg2 = cms.InputTag('selectedPatTausForDiTau2ndProngIndividual')
-)    
+selectedDiTauPairs2ndTauProngIndividual = copy.deepcopy(selectedDiTauPairs1stTauChargeCumulative)
+selectedDiTauPairs2ndTauProngIndividual.srcLeg2 = cms.InputTag('selectedLayer1TausProngIndividual')
 
-selectedDiTauPairs2ndTauProngCumulative = selectedDiTauPairs1stTauElectronVetoCumulative.clone(
-    srcLeg2 = cms.InputTag('selectedPatTausForDiTau2ndProngCumulative')
-)    
+selectedDiTauPairs2ndTauProngCumulative = copy.deepcopy(selectedDiTauPairs1stTauProngIndividual)
+selectedDiTauPairs2ndTauProngCumulative.srcLeg2 = cms.InputTag('selectedLayer1TausForDiTauProngCumulative')
 
-# require 2nd tau candidate to have charge either +1 or -1
+# require 1st tau candidate to have charge either +1 or -1
 # (computed as sum of charges of tracks within signal cone)
-selectedDiTauPairs2ndTauChargeIndividual = selectedDiTauPairs1stTauElectronVetoCumulative.clone(
-    srcLeg2 = cms.InputTag('selectedPatTausForDiTau2ndChargeIndividual')
-)    
+selectedDiTauPairs2ndTauChargeIndividual = copy.deepcopy(selectedDiTauPairs1stTauChargeCumulative)
+selectedDiTauPairs2ndTauChargeIndividual.srcLeg2 = cms.InputTag('selectedLayer1TausChargeIndividual')
 
-selectedDiTauPairs2ndTauChargeCumulative = selectedDiTauPairs1stTauElectronVetoCumulative.clone(
-    srcLeg2 = cms.InputTag('selectedPatTausForDiTau2ndChargeCumulative')
-)
+selectedDiTauPairs2ndTauChargeCumulative = copy.deepcopy(selectedDiTauPairs1stTauChargeIndividual)
+selectedDiTauPairs2ndTauChargeCumulative.srcLeg2 = cms.InputTag('selectedLayer1TausForDiTauChargeCumulative')
 
-# require 2nd tau candidate to pass muon veto
-selectedDiTauPairs2ndTauMuonVetoIndividual = selectedDiTauPairs1stTauElectronVetoCumulative.clone(
-    srcLeg2 = cms.InputTag('selectedPatTausForDiTau2ndMuonVetoIndividual')
-)
-
-selectedDiTauPairs2ndTauMuonVetoCumulative = selectedDiTauPairs1stTauElectronVetoCumulative.clone(
-    srcLeg2 = cms.InputTag('selectedPatTausForDiTau2ndMuonVetoCumulative')
-)
-
-# require 2nd tau candidate to pass electron veto
-selectedDiTauPairs2ndTauElectronVetoIndividual = selectedDiTauPairs1stTauElectronVetoCumulative.clone(
-    srcLeg2 = cms.InputTag('selectedPatTausForDiTau2ndElectronVetoIndividual')
-)
-
-selectedDiTauPairs2ndTauElectronVetoCumulative = selectedDiTauPairs1stTauElectronVetoCumulative.clone(
-    srcLeg2 = cms.InputTag('selectedPatTausForDiTau2ndElectronVetoCumulative'),
-    doSVreco = cms.bool(True),
-    nSVfit = cms.PSet()
-)
-
-#--------------------------------------------------------------------------------
-# configure (new) SVfit algorithm
-# (using combination of PS + MET likelihoods + logM regularization term
-#  to reconstruct mass of tau lepton pair, as described in CMS AN-11-165)
-selectedDiTauPairs2ndTauElectronVetoCumulative.nSVfit.psKine_MEt_logM_fit = cms.PSet()
-selectedDiTauPairs2ndTauElectronVetoCumulative.nSVfit.psKine_MEt_logM_fit.config = copy.deepcopy(nSVfitConfig_template)
-selectedDiTauPairs2ndTauElectronVetoCumulative.nSVfit.psKine_MEt_logM_fit.config.event.resonances.A.daughters.leg1 = cms.PSet(
-    src = selectedDiTauPairs2ndTauElectronVetoCumulative.srcLeg1,
-    likelihoodFunctions = cms.VPSet(nSVfitTauLikelihoodPhaseSpace),
-    builder = nSVfitTauToHadBuilder
-)
-selectedDiTauPairs2ndTauElectronVetoCumulative.nSVfit.psKine_MEt_logM_fit.config.event.resonances.A.daughters.leg2 = cms.PSet(
-    src = selectedDiTauPairs2ndTauElectronVetoCumulative.srcLeg2,
-    likelihoodFunctions = cms.VPSet(nSVfitTauLikelihoodPhaseSpace),
-    builder = nSVfitTauToHadBuilder
-)
-selectedDiTauPairs2ndTauElectronVetoCumulative.nSVfit.psKine_MEt_logM_fit.algorithm = cms.PSet(
-    pluginName = cms.string("nSVfitAlgorithmByLikelihoodMaximization"),
-    pluginType = cms.string("NSVfitAlgorithmByLikelihoodMaximization"),                                    
-    minimizer  = cms.vstring("Minuit2", "Migrad"),
-    maxObjFunctionCalls = cms.uint32(5000),  
-    verbosity = cms.int32(0)
-)
-
-selectedDiTauPairs2ndTauElectronVetoCumulative.nSVfit.psKine_MEt_logM_int = cms.PSet()
-selectedDiTauPairs2ndTauElectronVetoCumulative.nSVfit.psKine_MEt_logM_int.config = \
-  selectedDiTauPairs2ndTauElectronVetoCumulative.nSVfit.psKine_MEt_logM_fit.config
-selectedDiTauPairs2ndTauElectronVetoCumulative.nSVfit.psKine_MEt_logM_int.algorithm = cms.PSet(
-    pluginName = cms.string("nSVfitAlgorithmByIntegration"),
-    pluginType = cms.string("NSVfitAlgorithmByIntegration"),
-    parameters   = nSVfitProducerByIntegration.algorithm.parameters,
-    vegasOptions = nSVfitProducerByIntegration.algorithm.vegasOptions
-)
-#--------------------------------------------------------------------------------
-
-# define additional collections of tau-jet + tau-jet candidates
-# with loose lead. track Pt, track isolation and ECAL isolation applied on second leg
-# (NOTE: to be used for the purpose of factorizing efficiencies
-#        of tau id. criteria from other event selection criteria,
-#        in order to avoid problems with limited Monte Carlo statistics)
-
-selectedDiTauPairs2ndTauLeadTrkPtLooseIndividual = selectedDiTauPairs2ndTauLeadTrkPtIndividual.clone(
-    srcLeg2 = cms.InputTag('selectedPatTausForDiTau2ndLeadTrkPtLooseIndividual')    
-)    
-selectedDiTauPairs2ndTauLeadTrkPtLooseCumulative = selectedDiTauPairs2ndTauLeadTrkPtCumulative.clone(
-    srcLeg2 = cms.InputTag('selectedPatTausForDiTau2ndLeadTrkPtLooseCumulative')
-)
-
-selectedDiTauPairs2ndTauTaNCdiscrLooseIndividual = selectedDiTauPairs2ndTauTaNCdiscrIndividual.clone(
-    srcLeg2 = cms.InputTag('selectedPatTausForDiTau2ndTaNCdiscrLooseIndividual')
-)
-selectedDiTauPairs2ndTauTaNCdiscrLooseCumulative = selectedDiTauPairs2ndTauTaNCdiscrCumulative.clone(
-    srcLeg2 = cms.InputTag('selectedPatTausForDiTau2ndTaNCdiscrLooseCumulative')
-)
-
-selectedDiTauPairs2ndTauTrkIsoLooseIndividual = selectedDiTauPairs2ndTauTrkIsoIndividual.clone(
-    srcLeg2 = cms.InputTag('selectedPatTausForDiTau2ndTrkIsoLooseIndividual')
-)    
-selectedDiTauPairs2ndTauTrkIsoLooseCumulative = selectedDiTauPairs2ndTauTrkIsoCumulative.clone(
-    srcLeg2 = cms.InputTag('selectedPatTausForDiTau2ndTrkIsoLooseCumulative')
-)    
-
-selectedDiTauPairs2ndTauEcalIsoLooseIndividual = selectedDiTauPairs2ndTauEcalIsoIndividual.clone(
-    srcLeg2 = cms.InputTag('selectedPatTausForDiTau2ndEcalIsoLooseIndividual')
-)    
-selectedDiTauPairs2ndTauEcalIsoLooseCumulative = selectedDiTauPairs2ndTauEcalIsoCumulative.clone(
-    srcLeg2 = cms.InputTag('selectedPatTausForDiTau2ndEcalIsoLooseCumulative')
-)    
-
-selectedDiTauPairs2ndTauProngLooseIndividual = selectedDiTauPairs2ndTauProngIndividual.clone(
-    srcLeg2 = cms.InputTag('selectedPatTausForDiTau2ndProngLooseIndividual')
-)    
-selectedDiTauPairs2ndTauProngLooseCumulative = selectedDiTauPairs2ndTauProngCumulative.clone(
-    srcLeg2 = cms.InputTag('selectedPatTausForDiTau2ndProngLooseCumulative')
-)    
-
-selectedDiTauPairs2ndTauChargeLooseIndividual = selectedDiTauPairs2ndTauChargeIndividual.clone(
-    srcLeg2 = cms.InputTag('selectedPatTausForDiTau2ndChargeLooseIndividual')
-)    
-selectedDiTauPairs2ndTauChargeLooseCumulative = selectedDiTauPairs2ndTauChargeCumulative.clone(
-    srcLeg2 = cms.InputTag('selectedPatTausForDiTau2ndChargeLooseCumulative')
-)
-
-selectedDiTauPairs2ndTauMuonVetoLooseIndividual = selectedDiTauPairs2ndTauMuonVetoIndividual.clone(
-    srcLeg2 = cms.InputTag('selectedPatTausForDiTau2ndMuonVetoLooseIndividual')
-)
-selectedDiTauPairs2ndTauMuonVetoLooseCumulative = selectedDiTauPairs2ndTauMuonVetoCumulative.clone(
-    srcLeg2 = cms.InputTag('selectedPatTausForDiTau2ndMuonVetoLooseCumulative')
-)
-
-selectedDiTauPairs2ndTauElectronVetoLooseIndividual = selectedDiTauPairs2ndTauElectronVetoIndividual.clone(
-    srcLeg2 = cms.InputTag('selectedPatTausForDiTau2ndElectronVetoLooseIndividual')
-)
-#
-# NOTE:
-#     (1) SVfit algorithm with likelihood functions for polarized tau lepton decays
-#         cannot be run in case loose tau id. criteria are applied,
-#         as the charge of the tau-jet + tau-jet pair as well as
-#         the (hypothetic) tau decay mode cannot be reconstructed for the second leg
-#        --> use likelihood functions for "isotropic" (phase-space only) tau lepton decays instead,
-#            so that a valid solution exists for { polKine, polKine_MEt, polKine_MEt_ptBalance }
-#        --> conguration parameters of event-dump plugin and SVFit histogram manager do not need to be changed
-#     (2) The usage of likelihood functions for "isotropic" (phase-space only) instead of polarized tau lepton decays
-#         will introduce a (small) bias to the shape of tau+ tau- invariant mass distribution
-#         reconstructed for QCD background
-#        (and a small data-Monte Carlo difference, as factorization is applied to QCD Monte Carlo only, not to the data)
-#
-selectedDiTauPairs2ndTauElectronVetoLooseCumulative = selectedDiTauPairs2ndTauElectronVetoCumulative.clone(
-    srcLeg2 = cms.InputTag('selectedPatTausForDiTau2ndElectronVetoLooseCumulative'),
-    doSVreco = cms.bool(True),
-    nSVfit = cms.PSet()
-)
-
-selectedDiTauPairs2ndTauElectronVetoLooseCumulative.nSVfit = copy.deepcopy(selectedDiTauPairs2ndTauElectronVetoCumulative.nSVfit)
-selectedDiTauPairs2ndTauElectronVetoLooseCumulative.nSVfit.psKine_MEt_logM_fit.config.event.resonances.A.daughters.leg2.src = \
-  selectedDiTauPairs2ndTauElectronVetoLooseCumulative.srcLeg2
-selectedDiTauPairs2ndTauElectronVetoLooseCumulative.nSVfit.psKine_MEt_logM_int.config.event.resonances.A.daughters.leg2.src = \
-  selectedDiTauPairs2ndTauElectronVetoLooseCumulative.srcLeg2
-
-produceDiTauPairs = cms.Sequence(
-    allDiTauPairs
-    # detector acceptance cuts for first tau
-   * selectedDiTauPairs1stTauEta21Individual * selectedDiTauPairs1stTauEta21Cumulative
-   * selectedDiTauPairs1stTauPt20Individual * selectedDiTauPairs1stTauPt20Cumulative
-    # detector acceptance cuts for second tau 
-   * selectedDiTauPairs2ndTauEta21Individual * selectedDiTauPairs2ndTauEta21Cumulative
-   * selectedDiTauPairs2ndTauPt20Individual * selectedDiTauPairs2ndTauPt20Cumulative
-    # tau id. selection criteria for first tau
-   * selectedDiTauPairs1stTauLeadTrkIndividual * selectedDiTauPairs1stTauLeadTrkCumulative
-   * selectedDiTauPairs1stTauLeadTrkPtIndividual * selectedDiTauPairs1stTauLeadTrkPtCumulative
-   * selectedDiTauPairs1stTauTaNCdiscrIndividual * selectedDiTauPairs1stTauTaNCdiscrCumulative 
-   * selectedDiTauPairs1stTauTrkIsoIndividual * selectedDiTauPairs1stTauTrkIsoCumulative
-   * selectedDiTauPairs1stTauEcalIsoIndividual * selectedDiTauPairs1stTauEcalIsoCumulative
-   * selectedDiTauPairs1stTauProngIndividual * selectedDiTauPairs1stTauProngCumulative
-   * selectedDiTauPairs1stTauChargeIndividual * selectedDiTauPairs1stTauChargeCumulative
-   * selectedDiTauPairs1stTauMuonVetoIndividual * selectedDiTauPairs1stTauMuonVetoCumulative
-   * selectedDiTauPairs1stTauElectronVetoIndividual * selectedDiTauPairs1stTauElectronVetoCumulative
-    # tau id. selection criteria for second tau
-    # (two kinds: tight selection criteria for final Z --> tau+ tau- --> tau-jet + tau-jet analysis,
-    #             loose selection criteria for factorization purposes,
-    #             used in order to increase event statistics of QCD background Monte Carlo samples)
-   * selectedDiTauPairs2ndTauLeadTrkIndividual * selectedDiTauPairs2ndTauLeadTrkCumulative
-   * selectedDiTauPairs2ndTauLeadTrkPtIndividual * selectedDiTauPairs2ndTauLeadTrkPtCumulative
-    * selectedDiTauPairs2ndTauLeadTrkPtLooseIndividual * selectedDiTauPairs2ndTauLeadTrkPtLooseCumulative
-   * selectedDiTauPairs2ndTauTaNCdiscrIndividual * selectedDiTauPairs2ndTauTaNCdiscrCumulative
-    * selectedDiTauPairs2ndTauTaNCdiscrLooseIndividual * selectedDiTauPairs2ndTauTaNCdiscrLooseCumulative  
-   * selectedDiTauPairs2ndTauTrkIsoIndividual * selectedDiTauPairs2ndTauTrkIsoCumulative
-    * selectedDiTauPairs2ndTauTrkIsoLooseIndividual * selectedDiTauPairs2ndTauTrkIsoLooseCumulative
-   * selectedDiTauPairs2ndTauEcalIsoIndividual * selectedDiTauPairs2ndTauEcalIsoCumulative
-    * selectedDiTauPairs2ndTauEcalIsoLooseIndividual * selectedDiTauPairs2ndTauEcalIsoLooseCumulative
-   * selectedDiTauPairs2ndTauProngIndividual * selectedDiTauPairs2ndTauProngCumulative
-    * selectedDiTauPairs2ndTauProngLooseIndividual * selectedDiTauPairs2ndTauProngLooseCumulative
-   * selectedDiTauPairs2ndTauChargeIndividual * selectedDiTauPairs2ndTauChargeCumulative
-    * selectedDiTauPairs2ndTauChargeLooseIndividual * selectedDiTauPairs2ndTauChargeLooseCumulative
-   * selectedDiTauPairs2ndTauMuonVetoIndividual * selectedDiTauPairs2ndTauMuonVetoCumulative
-    * selectedDiTauPairs2ndTauMuonVetoLooseIndividual * selectedDiTauPairs2ndTauMuonVetoLooseCumulative
-   * selectedDiTauPairs2ndTauElectronVetoIndividual * selectedDiTauPairs2ndTauElectronVetoCumulative
-    * selectedDiTauPairs2ndTauElectronVetoLooseIndividual * selectedDiTauPairs2ndTauElectronVetoLooseCumulative
-)
+produceDiTauPairs = cms.Sequence( allDiTauPairs
+                                 *selectedDiTauPairs1stTauEta21Individual * selectedDiTauPairs1stTauEta21Cumulative
+                                 *selectedDiTauPairs1stTauPt20Individual * selectedDiTauPairs1stTauPt20Cumulative
+                                 *selectedDiTauPairs1stTauLeadTrkIndividual * selectedDiTauPairs1stTauLeadTrkCumulative
+                                 *selectedDiTauPairs1stTauLeadTrkPtIndividual * selectedDiTauPairs1stTauLeadTrkPtCumulative
+                                 *selectedDiTauPairs1stTauTrkIsoIndividual * selectedDiTauPairs1stTauTrkIsoCumulative
+                                 *selectedDiTauPairs1stTauEcalIsoIndividual * selectedDiTauPairs1stTauEcalIsoCumulative
+                                 *selectedDiTauPairs1stTauProngIndividual * selectedDiTauPairs1stTauProngCumulative
+                                 *selectedDiTauPairs1stTauChargeIndividual * selectedDiTauPairs1stTauChargeCumulative 
+                                 *selectedDiTauPairs2ndTauEta21Individual * selectedDiTauPairs2ndTauEta21Cumulative
+                                 *selectedDiTauPairs2ndTauPt20Individual * selectedDiTauPairs2ndTauPt20Cumulative
+                                 *selectedDiTauPairs2ndTauLeadTrkIndividual * selectedDiTauPairs2ndTauLeadTrkCumulative
+                                 *selectedDiTauPairs2ndTauLeadTrkPtIndividual * selectedDiTauPairs2ndTauLeadTrkPtCumulative
+                                 *selectedDiTauPairs2ndTauTrkIsoIndividual * selectedDiTauPairs2ndTauTrkIsoCumulative
+                                 *selectedDiTauPairs2ndTauEcalIsoIndividual * selectedDiTauPairs2ndTauEcalIsoCumulative
+                                 *selectedDiTauPairs2ndTauProngIndividual * selectedDiTauPairs2ndTauProngCumulative
+                                 *selectedDiTauPairs2ndTauChargeIndividual * selectedDiTauPairs2ndTauChargeCumulative )

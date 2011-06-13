@@ -9,9 +9,9 @@
  * 
  * \authors Christian Veelken
  *
- * \version $Revision: 1.4 $
+ * \version $Revision: 1.1.2.1 $
  *
- * $Id: CompositePtrCandidateTMEtProducer.h,v 1.4 2011/02/21 13:07:09 veelken Exp $
+ * $Id: CompositePtrCandidateTMEtProducer.h,v 1.1.2.1 2009/08/04 09:54:39 mbluj Exp $
  *
  */
 
@@ -23,7 +23,7 @@
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
-#include "FWCore/Utilities/interface/InputTag.h"
+#include "FWCore/ParameterSet/interface/InputTag.h"
 
 #include "DataFormats/Common/interface/View.h"
 
@@ -36,15 +36,12 @@
 
 #include "TauAnalysis/CandidateTools/interface/CompositePtrCandidateTMEtAlgorithm.h"
 
-#include "DataFormats/METReco/interface/MET.h"
-
 #include <string>
 
 template<typename T>
 class CompositePtrCandidateTMEtProducer : public edm::EDProducer 
 {
   typedef edm::Ptr<T> TPtr;
-  typedef edm::Ptr<reco::MET> MEtPtr;
 
   typedef std::vector<CompositePtrCandidateTMEt<T> > CompositePtrCandidateCollection;
   
@@ -55,7 +52,6 @@ class CompositePtrCandidateTMEtProducer : public edm::EDProducer
   {
     srcVisDecayProducts_ = cfg.getParameter<edm::InputTag>("srcVisDecayProducts");
     srcMET_ = cfg.getParameter<edm::InputTag>("srcMET");
-
     verbosity_ = cfg.getUntrackedParameter<int>("verbosity", 0);
 
     produces<CompositePtrCandidateCollection>("");
@@ -63,39 +59,29 @@ class CompositePtrCandidateTMEtProducer : public edm::EDProducer
 
   ~CompositePtrCandidateTMEtProducer() {}
 
-  void beginJob()
-  {
-    algorithm_.beginJob();
-  }
-
   void produce(edm::Event& evt, const edm::EventSetup& es)
   {
     typedef edm::View<T> TView;
     edm::Handle<TView> visDecayProductsCollection;
     pf::fetchCollection(visDecayProductsCollection, srcVisDecayProducts_, evt);
   
-    typedef edm::View<reco::MET> MEtView;
-    edm::Handle<MEtView> metCollection;
+    reco::CandidatePtr metPtr;
+    edm::Handle<reco::CandidateView> metCollection;
     pf::fetchCollection(metCollection, srcMET_, evt);
-
+      
 //--- check that there is exactly one MET object in the event
 //    (missing transverse momentum is an **event level** quantity)
-    MEtPtr metPtr;
     if ( metCollection->size() == 1 ) {
       metPtr = metCollection->ptrAt(0);
     } else {
-      edm::LogError ("produce") 
-	<< " Found " << metCollection->size() << " MET objects in collection = " << srcMET_ << ","
-	<< " --> CompositePtrCandidateTMEt collection will NOT be produced !!";
+      edm::LogError ("produce") << " Found " << metCollection->size() << " MET objects in collection = " << srcMET_ << ","
+				<< " --> CompositePtrCandidateTMEt collection will NOT be produced !!";
       std::auto_ptr<CompositePtrCandidateCollection> emptyCompositePtrCandidateCollection(new CompositePtrCandidateCollection());
       evt.put(emptyCompositePtrCandidateCollection);
       return;
     }
 
-    algorithm_.beginEvent(evt, es);
-
     std::auto_ptr<CompositePtrCandidateCollection> compositePtrCandidateCollection(new CompositePtrCandidateCollection());
-
     for ( unsigned idxVisDecayProducts = 0, numVisDecayProducts = visDecayProductsCollection->size(); 
 	  idxVisDecayProducts < numVisDecayProducts; ++idxVisDecayProducts ) {
       TPtr visDecayProductsPtr = visDecayProductsCollection->ptrAt(idxVisDecayProducts);
@@ -115,7 +101,6 @@ class CompositePtrCandidateTMEtProducer : public edm::EDProducer
   
   edm::InputTag srcVisDecayProducts_;
   edm::InputTag srcMET_;
-
   int verbosity_;
 };
 
