@@ -63,6 +63,14 @@ nSVfitTauToHadBuilder = cms.PSet(
 nSVfitResonanceLikelihoodLogM = cms.PSet(
     pluginName = cms.string("nSVfitResonanceLikelihoodLogM"),
     pluginType = cms.string("NSVfitResonanceLikelihoodMassPenalty"),
+    nll = cms.string("TMath::Log(mass)"),
+    power = cms.double(1.0)
+)
+
+nSVfitResonanceLikelihoodLogEff = cms.PSet(
+    pluginName = cms.string("nSVfitResonanceLikelihoodEff_power100"),
+    pluginType = cms.string("NSVfitResonanceLikelihoodMassPenalty"),
+    nll = cms.string("TMath::Log(TMath::Max(5.00e-3, 4.21e-2*(2.52e-2 + TMath::Erf((x - 4.40e+1)*6.90e-3))))"),
     power = cms.double(1.0)
 )
 
@@ -106,6 +114,7 @@ nSVfitConfig_template = cms.PSet(
                     )
                 ),
                 likelihoodFunctions = cms.VPSet(nSVfitResonanceLikelihoodLogM),
+                #likelihoodFunctions = cms.VPSet(nSVfitResonanceLikelihoodLogEff),
                 builder = nSVfitResonanceBuilder
             )
         ),
@@ -117,7 +126,7 @@ nSVfitConfig_template = cms.PSet(
 )
 
 nSVfitProducerByIntegration = cms.EDProducer("NSVfitProducerByIntegration",
-    config    = nSVfitConfig_template,
+    config = nSVfitConfig_template,
     algorithm = cms.PSet(
         pluginName = cms.string("nSVfitAlgorithmByIntegration"),
         pluginType = cms.string("NSVfitAlgorithmByIntegration"),
@@ -134,9 +143,9 @@ nSVfitProducerByIntegration = cms.EDProducer("NSVfitProducerByIntegration",
         vegasOptions = cms.PSet(
             numCallsGridOpt = cms.uint32(1000),
             numCallsIntEval = cms.uint32(10000),
-            maxChi2         = cms.double(2.),
-            maxIntEvalIter  = cms.uint32(5),                                          
-            precision       = cms.double(0.00001)
+            maxChi2 = cms.double(2.),
+            maxIntEvalIter = cms.uint32(5),                                          
+            precision = cms.double(0.00001)
         ),
         verbosity = cms.int32(0)
     ),
@@ -145,7 +154,7 @@ nSVfitProducerByIntegration = cms.EDProducer("NSVfitProducerByIntegration",
 )
 
 nSVfitProducerByLikelihoodMaximization = cms.EDProducer("NSVfitProducer",
-    config    = nSVfitConfig_template,
+    config = nSVfitConfig_template,
     algorithm = cms.PSet(
         pluginName = cms.string("nSVfitAlgorithmByLikelihoodMaximization"),
         pluginType = cms.string("NSVfitAlgorithmByLikelihoodMaximization"),

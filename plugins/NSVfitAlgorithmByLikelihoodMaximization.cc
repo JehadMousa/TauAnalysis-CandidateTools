@@ -109,26 +109,17 @@ void NSVfitAlgorithmByLikelihoodMaximization::fitImp() const
 
 //--- get Minimizer status code, check if solution is valid:
 //
+//    0: Valid solution
 //    1: Covariance matrix was made positive definite
 //    2: Hesse matrix is invalid
 //    3: Estimated distance to minimum (EDM) is above maximum
 //    4: Reached maximum number of function calls before reaching convergence
 //    5: Any other failure
 //
-
   int fitStatus = minimizer_->Status();
   //std::cout << " fitStatus = " << fitStatus << std::endl;
 
-//--- evaluate Minuit status code:
-//    0: error matrix not calculated at all
-//    1: diagonal approximation only, not accurate
-//    2: full matrix, but forced positive-definite
-//    3: full accurate covariance matrix 
-//      (after MIGRAD, this is the indication of normal convergence.)
-//
-//   NOTE: meaning of error codes taken from http://lmu.web.psi.ch/facilities/software/minuit_doc.html
-//
-  bool isValidSolution = (fitStatus == 2 || fitStatus == 3);
+  bool isValidSolution = (fitStatus == 0);
 
   size_t numResonances = currentEventHypothesis_->numResonances();
   for ( size_t iResonance = 0; iResonance < numResonances; ++iResonance ) {
@@ -174,8 +165,9 @@ void NSVfitAlgorithmByLikelihoodMaximization::setMassResults(NSVfitResonanceHypo
   resonance.massErrUp_   = resonance.mass_*TMath::Sqrt(massRelErrUp2);
   resonance.massErrDown_ = resonance.mass_*TMath::Sqrt(massRelErrDown2);
 
-  //std::cout << "--> setting mass = " << resonance.mass_ 
-  //	      << " + " << resonance.massErrUp_ << " - " << resonance.massErrDown_ << std::endl;
+  //std::cout << "--> mass (plugin version)    = " << resonance.mass_ 
+  //	      << " + " << resonance.massErrUp_ << " - " << resonance.massErrDown_ 
+  //	      << std::endl;
 }
 
 double NSVfitAlgorithmByLikelihoodMaximization::nll(const double* x, const double* param) const
@@ -205,6 +197,11 @@ double NSVfitAlgorithmByLikelihoodMaximization::nll(const double* x, const doubl
 
 //--- build event, resonance and particle hypotheses
   eventModel_->builder_->applyFitParameter(currentEventHypothesis_, x);
+
+  if ( verbosity_ ) {
+    std::cout << " penalty term = " << penalty << std::endl;
+    std::cout << " combied nll  = " << penalty + eventModel_->nll(currentEventHypothesis_) << std::endl;
+  }
 
 //--- compute likelihood
   return penalty + eventModel_->nll(currentEventHypothesis_);
