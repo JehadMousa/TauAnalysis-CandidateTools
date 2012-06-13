@@ -6,6 +6,7 @@
 <use   name="DataFormats/Math"/>
 <use   name="DataFormats/PatCandidates"/>
 <use   name="RecoVertex/VertexPrimitives"/>
+<use   name="RecoMET/METAlgorithms"/>
 <use   name="root"/>
 <use   name="rootcintex"/>
 <use   name="classlib"/>
