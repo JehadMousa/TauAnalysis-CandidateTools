@@ -9,9 +9,9 @@
  *
  * \author Christian Veelken, UC Davis
  *
- * \version $Revision: 1.5 $
+ * \version $Revision: 1.6 $
  *
- * $Id: NSVfitAlgorithmByIntegration2.h,v 1.5 2012/12/04 15:28:35 veelken Exp $
+ * $Id: NSVfitAlgorithmByIntegration2.h,v 1.6 2013/01/14 17:08:46 veelken Exp $
  *
  */
 
@@ -185,7 +185,7 @@ class NSVfitAlgorithmByIntegration2 : public NSVfitAlgorithmBase
 
   double* fitParameterValues_;
 
-  std::vector<TH1*> probHistFitParameter_;
+  mutable std::vector<TH1*> probHistFitParameter_;
   struct AuxProbHistogramsDaughter
   {
     size_t idxDaughter_;
@@ -202,8 +202,8 @@ class NSVfitAlgorithmByIntegration2 : public NSVfitAlgorithmBase
     TH1* probHistResonanceMass_;
     std::vector<AuxProbHistogramsDaughter*> probHistDaughters_;
   };
-  std::vector<AuxProbHistogramsResonance*> probHistResonances_;
-  TH1* probHistEventMass_;
+  mutable std::vector<AuxProbHistogramsResonance*> probHistResonances_;
+  mutable TH1* probHistEventMass_;
   mutable std::vector<double> probListEventMass_;
   ROOT::Math::Functor* auxFillProbHistograms_;
   int max_or_median_;

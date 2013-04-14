@@ -137,6 +137,7 @@ void NSVfitTauDecayBuilder::initialize(NSVfitTauDecayHypothesis* hypothesis, con
     NSVfitParameter* fitParameter = algorithm_->getFitParameter(idxFitParameter_nuInvMass_);
     assert(fitParameter);
     fitParameter->setUpperLimit(SVfit_namespace::tauLeptonMass - TMath::Min(hypothesis->visMass_, 1.6));
+    fitParameter->setInitialValue(0.5*(fitParameter->LowerLimit() + fitParameter->UpperLimit()));
   }
 
   // Extract the associated tracks, and fit a vertex if possible.

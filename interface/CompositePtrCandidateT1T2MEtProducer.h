@@ -12,9 +12,9 @@
  *          Michal Bluj,
  *          Christian Veelken
  *
- * \version $Revision: 1.22 $
+ * \version $Revision: 1.23 $
  *
- * $Id: CompositePtrCandidateT1T2MEtProducer.h,v 1.22 2011/05/27 10:18:30 veelken Exp $
+ * $Id: CompositePtrCandidateT1T2MEtProducer.h,v 1.23 2011/11/06 13:26:05 veelken Exp $
  *
  */
 
@@ -75,8 +75,7 @@ class CompositePtrCandidateT1T2MEtProducer : public edm::EDProducer
       doMtautauMin_(false), 
       cfgError_(0)
   {
-    //std::cout << "<CompositePtrCandidateT1T2MEtProducer::CompositePtrCandidateT1T2MEtProducer>:" << std::endl;
-    //std::cout << " moduleLabel = " << moduleLabel_ << std::endl;
+    //std::cout << "<CompositePtrCandidateT1T2MEtProducer::CompositePtrCandidateT1T2MEtProducer (moduleLabel = " << moduleLabel_ << ")>:" << std::endl;
 
     useLeadingTausOnly_ = cfg.getParameter<bool>("useLeadingTausOnly");
     srcLeg1_ = cfg.getParameter<edm::InputTag>("srcLeg1");
@@ -141,8 +140,32 @@ class CompositePtrCandidateT1T2MEtProducer : public edm::EDProducer
 
   void produce(edm::Event& evt, const edm::EventSetup& es)
   {
-    //std::cout << "<CompositePtrCandidateT1T2MEtProducer::produce>:" << std::endl;
-    //std::cout << " moduleLabel = " << moduleLabel_ << std::endl;
+    //std::cout << "<CompositePtrCandidateT1T2MEtProducer::produce (moduleLabel = " << moduleLabel_ << ")>:" << std::endl;
+
+    // CV: skip events in case there are no diTau objects to be produced
+    size_t numDiTauCandidates = 0;
+    if ( srcReRecoDiTauObjects_.label() != "" ) {
+      edm::Handle<CompositePtrCandidateCollection> diTauCandidateCollection;
+      pf::fetchCollection(diTauCandidateCollection, srcReRecoDiTauObjects_, evt);
+      numDiTauCandidates = diTauCandidateCollection->size();
+    } else {
+      typedef edm::View<T1> T1View;
+      edm::Handle<T1View> leg1Collection;
+      pf::fetchCollection(leg1Collection, srcLeg1_, evt);
+      typedef edm::View<T2> T2View;
+      edm::Handle<T2View> leg2Collection;
+      pf::fetchCollection(leg2Collection, srcLeg2_, evt);
+      numDiTauCandidates = leg1Collection->size()*leg2Collection->size();
+    }
+    if ( numDiTauCandidates == 0 ) {
+      if ( verbosity_ >= 1 ) {
+	std::cout << "<CompositePtrCandidateT1T2MEtProducer::produce (moduleLabel = " << moduleLabel_ << ")>:" << std::endl;
+	std::cout << " No diTauCandidates to be produced --> skipping !!" << std::endl;
+      }
+      std::auto_ptr<CompositePtrCandidateCollection> emptyCompositePtrCandidateCollection(new CompositePtrCandidateCollection());
+      evt.put(emptyCompositePtrCandidateCollection);
+      return;
+    }
 
 //--- print-out an error message and add an empty collection to the event 
 //    in case of erroneous configuration parameters

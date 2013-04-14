@@ -390,26 +390,6 @@ void NSVfitAlgorithmByIntegration2::beginEvent(const edm::Event& evt, const edm:
 {
   NSVfitAlgorithmBase::beginEvent(evt, es);
 
-  for ( std::vector<TH1*>::iterator histogram = probHistFitParameter_.begin();
-	histogram != probHistFitParameter_.end(); ++histogram ) {
-    (*histogram)->Reset();
-  }
-  for ( std::vector<AuxProbHistogramsResonance*>::iterator probHistResonance = probHistResonances_.begin();
-	probHistResonance != probHistResonances_.end(); ++probHistResonance ) {
-    (*probHistResonance)->probHistResonancePt_->Reset();
-    (*probHistResonance)->probHistResonanceEta_->Reset();
-    (*probHistResonance)->probHistResonancePhi_->Reset();
-    (*probHistResonance)->probHistResonanceMass_->Reset();
-    for ( std::vector<AuxProbHistogramsDaughter*>::iterator probHistDaughter = (*probHistResonance)->probHistDaughters_.begin();
-	  probHistDaughter != (*probHistResonance)->probHistDaughters_.end(); ++probHistDaughter ) {
-      (*probHistDaughter)->probHistDaughterPt_->Reset();
-      (*probHistDaughter)->probHistDaughterEta_->Reset();
-      (*probHistDaughter)->probHistDaughterPhi_->Reset();
-    }
-  }
-  probHistEventMass_->Reset();
-  probListEventMass_.clear();
-
   currentRunNumber_ = evt.id().run();
   currentLumiSectionNumber_ = evt.luminosityBlock();
   currentEventNumber_ = evt.id().event();
@@ -505,6 +485,26 @@ void NSVfitAlgorithmByIntegration2::fitImp() const
   if ( verbosity_ >= 2 ) std::cout << "startPosition (mapped into interval ]-1..+1[) = " << format_vdouble(startPosition_) << std::endl;
 #endif
   integrator_->initializeStartPosition_and_Momentum(startPosition_);
+
+  for ( std::vector<TH1*>::iterator histogram = probHistFitParameter_.begin();
+	histogram != probHistFitParameter_.end(); ++histogram ) {
+    (*histogram)->Reset();
+  }
+  for ( std::vector<AuxProbHistogramsResonance*>::iterator probHistResonance = probHistResonances_.begin();
+	probHistResonance != probHistResonances_.end(); ++probHistResonance ) {
+    (*probHistResonance)->probHistResonancePt_->Reset();
+    (*probHistResonance)->probHistResonanceEta_->Reset();
+    (*probHistResonance)->probHistResonancePhi_->Reset();
+    (*probHistResonance)->probHistResonanceMass_->Reset();
+    for ( std::vector<AuxProbHistogramsDaughter*>::iterator probHistDaughter = (*probHistResonance)->probHistDaughters_.begin();
+	  probHistDaughter != (*probHistResonance)->probHistDaughters_.end(); ++probHistDaughter ) {
+      (*probHistDaughter)->probHistDaughterPt_->Reset();
+      (*probHistDaughter)->probHistDaughterEta_->Reset();
+      (*probHistDaughter)->probHistDaughterPhi_->Reset();
+    }
+  }
+  probHistEventMass_->Reset();
+  probListEventMass_.clear();
 
   double integral, integralErr;
   int errorFlag = 0;
