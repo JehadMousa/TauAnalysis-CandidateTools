@@ -360,11 +360,14 @@ NSVfitStandaloneAlgorithm::integrateMarkovChain()
   double xl5[5] = { 0.0, 0.0, -pi, 0.0, -pi };
   double xu5[5] = { 1.0, SVfit_namespace::tauLeptonMass, pi, 1.0, pi };
   xu5[1] = SVfit_namespace::tauLeptonMass - TMath::Min(nll_->measuredTauLeptons()[0].mass(), 1.6);
+  x05[1] = 0.5*(xl5[1] + xu5[1]);
   double x06[6] = { 0.5, 0.8, 0.0, 0.5, 0.8, 0.0 };
   double xl6[6] = { 0.0, 0.0, -pi, 0.0, 0.0, -pi };
   double xu6[6] = { 1.0, SVfit_namespace::tauLeptonMass, pi, 1.0, SVfit_namespace::tauLeptonMass, pi };
   xu6[1] = SVfit_namespace::tauLeptonMass - TMath::Min(nll_->measuredTauLeptons()[0].mass(), 1.6);
+  x06[1] = 0.5*(xl6[1] + xu6[1]);
   xu6[4] = SVfit_namespace::tauLeptonMass - TMath::Min(nll_->measuredTauLeptons()[1].mass(), 1.6);
+  x06[4] = 0.5*(xl6[4] + xu6[4]);
   std::vector<double> x0(nDim);
   std::vector<double> xl(nDim);
   std::vector<double> xu(nDim);
