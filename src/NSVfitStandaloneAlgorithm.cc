@@ -54,11 +54,21 @@ NSVfitStandaloneAlgorithm::NSVfitStandaloneAlgorithm(std::vector<NSVfitStandalon
   // instantiate the combined likelihood
   nll_ = new NSVfitStandalone::NSVfitStandaloneLikelihood(measuredTauLeptons, measuredMET, covMET, (verbosity_ > 2));
   nllStatus_ = nll_->error();
+  // set up fast fit option
+  int decayType=0;
+  for(std::vector<NSVfitStandalone::MeasuredTauLepton>::const_iterator measured = measuredTauLeptons.begin(); measured != measuredTauLeptons.end(); ++measured){
+    decayType+= measured->decayType();
+  }
+  TLorentzVector lorentz1; lorentz1.SetXYZM(measuredTauLeptons[0].px(),measuredTauLeptons[0].py(),measuredTauLeptons[0].p4().pz(),measuredTauLeptons[0].mass());
+  TLorentzVector lorentz2; lorentz2.SetXYZM(measuredTauLeptons[1].px(),measuredTauLeptons[1].py(),measuredTauLeptons[1].p4().pz(),measuredTauLeptons[1].mass());
+  double met = sqrt(measuredMET.x()*measuredMET.x() + measuredMET.y()*measuredMET.y());
+  ntFit_=new NTFit(decayType, lorentz1, lorentz2, met, measuredMET.phi(), covMET);
 }
 
 NSVfitStandaloneAlgorithm::~NSVfitStandaloneAlgorithm() 
 {
   delete nll_;
+  delete ntFit_;
   delete minimizer_;
   delete mcObjectiveFunctionAdapter_;
   delete mcPtEtaPhiMassAdapter_;
@@ -186,6 +196,17 @@ NSVfitStandaloneAlgorithm::fit()
       std::cout << ">> phi (fit )      = " << fittedTauLeptons()[leg].phi() << std::endl; 
     }
   }
+}
+
+void
+NSVfitStandaloneAlgorithm::ntfit()  
+{ 
+  TLorentzVector lVec = ntFit_->NeutrinoToys(-1,-1,-1,-1);
+  TLorentzVector lUncVec = ntFit_->uncVec();
+  phi_   = lVec.Phi(); phiUncert_   = lUncVec.Phi();
+  eta_   = lVec.Eta(); etaUncert_   = lUncVec.Eta();
+  pt_    = lVec.Pt();  ptUncert_    = lUncVec.Pt();
+  mass_  = lVec.Pt();  massUncert_  = lUncVec.Pt();
 }
 
 void

@@ -36,19 +36,22 @@ void singleEvent()
   std::vector<NSVfitStandalone::MeasuredTauLepton> measuredTauLeptons;
   measuredTauLeptons.push_back(NSVfitStandalone::MeasuredTauLepton(NSVfitStandalone::kHadDecay, l2));
   measuredTauLeptons.push_back(NSVfitStandalone::MeasuredTauLepton(NSVfitStandalone::kLepDecay, l1));
-  // define algorithm (set the debug level to 3 for testing)
-  NSVfitStandaloneAlgorithm algo(measuredTauLeptons, MET, covMET, /*debug=*/0);
-  algo.addLogM(false);
   /* 
      the following lines show how to use the different methods on a single event
   */
+  // define algorithm (set the debug level to 3 for testing)
+  NSVfitStandaloneAlgorithm algo(measuredTauLeptons, MET, covMET, /*debug=*/0);
+  algo.addLogM(false);
   // minuit fit method
   //algo.fit();
   // integration by VEGAS (same as function algo.integrate() that has been in use when markov chain integration had not yet been implemented)
   //algo.integrateVEGAS();
   // integration by markov chain MC
-  algo.integrateMarkovChain();
+  //algo.integrateMarkovChain();
+  // fit using the new fast fit implementation
+  algo.ntfit();
 
+  // this return type is common for all algorithms
   double mass = algo.getMass(); // mass uncertainty not implemented yet
   if(algo.isValidSolution()){
     std::cout << "found mass    = " << mass << std::endl;

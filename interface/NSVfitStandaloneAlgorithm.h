@@ -4,6 +4,7 @@
 #include "TauAnalysis/CandidateTools/interface/NSVfitStandaloneLikelihood.h"
 #include "TauAnalysis/CandidateTools/interface/MarkovChainIntegrator.h"
 #include "TauAnalysis/CandidateTools/interface/svFitAuxFunctions.h"
+#include "TauAnalysis/CandidateTools/interface/NTFit.h"
 
 #include <TMath.h>
 #include <TArrayF.h>
@@ -269,6 +270,8 @@ class NSVfitStandaloneAlgorithm
 
   /// fit to be called from outside
   void fit();
+  /// fast fit version called from outside
+  void ntfit();
   /// integration by VEGAS (kept for legacy)
   void integrate() { return integrateVEGAS(); }
   /// integration by VEGAS to be called from outside
@@ -378,6 +381,8 @@ class NSVfitStandaloneAlgorithm
   double phi_;
   /// phi uncertainty of di-tau system
   double phiUncert_;
+  /// NT mass fitter
+  NTFit* ntFit_;
 };
 
 inline
