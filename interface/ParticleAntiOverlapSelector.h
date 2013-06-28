@@ -10,9 +10,9 @@
  *  modified by Konstantinos A. Petridis,
  *              Christian Veelken
  *
- * \version $Revision: 1.2 $
+ * \version $Revision: 1.1 $
  *
- * $Id: ParticleAntiOverlapSelector.h,v 1.2 2012/02/13 17:33:04 veelken Exp $
+ * $Id: ParticleAntiOverlapSelector.h,v 1.1 2012/03/07 13:22:46 veelken Exp $
  *
  */
 
@@ -28,11 +28,11 @@
 
 #include <vector>
 
-template <class T>
+template <class T, class TCollection = std::vector<T> >
 class ParticleAntiOverlapSelector
 {
  public:
-  typedef std::vector<T> collection;
+  typedef TCollection collection;
 
   explicit ParticleAntiOverlapSelector(const edm::ParameterSet& cfg)
   {
@@ -45,7 +45,7 @@ class ParticleAntiOverlapSelector
   typename std::vector<const T*>::const_iterator begin() const { return selected_.begin(); }
   typename std::vector<const T*>::const_iterator end() const { return selected_.end(); }
 
-  void select(const edm::Handle<collection>& particlesToBeFiltered, const edm::Event& evt, const edm::EventSetup& es)
+  void select(const edm::Handle<TCollection>& particlesToBeFiltered, const edm::Event& evt, const edm::EventSetup& es)
   {
     selected_.clear();
 
@@ -61,7 +61,7 @@ class ParticleAntiOverlapSelector
 	    particleNotToBeFiltered != particlesNotToBeFiltered->end(); ++particleNotToBeFiltered ) {
 	
 	int particleToBeFilteredIndex = 0;
-	for ( typename collection::const_iterator particleToBeFiltered = particlesToBeFiltered->begin();
+	for ( typename TCollection::const_iterator particleToBeFiltered = particlesToBeFiltered->begin();
 	      particleToBeFiltered != particlesToBeFiltered->end(); ++particleToBeFiltered, ++particleToBeFilteredIndex ) {
 	  
 	  double dR = reco::deltaR(particleToBeFiltered->p4(), particleNotToBeFiltered->p4());
@@ -72,7 +72,7 @@ class ParticleAntiOverlapSelector
     }
     
     int particleToBeFilteredIndex = 0;
-    for ( typename collection::const_iterator particleToBeFiltered = particlesToBeFiltered->begin();
+    for ( typename TCollection::const_iterator particleToBeFiltered = particlesToBeFiltered->begin();
 	  particleToBeFiltered != particlesToBeFiltered->end(); ++particleToBeFiltered, ++particleToBeFilteredIndex ) {
       if ( !invert_ ) {
 	if ( !isOverlap[particleToBeFilteredIndex] ) selected_.push_back(&(*particleToBeFiltered)); 

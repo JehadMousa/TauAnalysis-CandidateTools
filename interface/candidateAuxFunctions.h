@@ -52,6 +52,7 @@ const reco::Candidate* getDistPion(const pat::Tau&);
 const reco::Candidate* getDistPion(const reco::GenJet&);
 
 std::pair<double, double> compMEtProjU(const reco::Candidate::LorentzVector&, double, double, int&, bool = true);
+std::pair<double, double> compMEtProjU(double, double, double, double, int&, bool = true);
 
 std::vector<double> compTrackPtSums(const reco::VertexCollection&);
 size_t getNumVerticesPtGtThreshold(const std::vector<double>&, double);

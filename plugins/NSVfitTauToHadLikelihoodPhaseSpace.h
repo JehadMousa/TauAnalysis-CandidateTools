@@ -10,9 +10,9 @@
  * 
  * \author Evan Friis, Christian Veelken; UC Davis
  *
- * \version $Revision: 1.7 $
+ * \version $Revision: 1.9 $
  *
- * $Id: NSVfitTauToHadLikelihoodPhaseSpace.h,v 1.7 2012/03/14 16:34:47 veelken Exp $
+ * $Id: NSVfitTauToHadLikelihoodPhaseSpace.h,v 1.9 2012/03/22 09:37:13 veelken Exp $
  *
  */
 
@@ -34,6 +34,11 @@ class NSVfitTauToHadLikelihoodPhaseSpace : public NSVfitSingleParticleLikelihood
 
  private:
   bool applySinThetaFactor_; 
+
+  bool applyVisMassFactor_;
+  TH1* histogram_;
+  int firstBin_;
+  int lastBin_;
 };
 
 #endif

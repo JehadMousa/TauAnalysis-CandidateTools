@@ -157,8 +157,8 @@ matchedTauDecayType::matchedTauDecayType(const reco::GenParticle* genTau, const 
     recTauDecayMode_ = reco::PFTauDecayMode::tauDecayMuon;
   } else if ( dynamic_cast<const reco::PFTau*>(recCandidate_) ) {
     const reco::PFTau* tau = dynamic_cast<const reco::PFTau*>(recCandidate_);
-    const reco::PFCandidateRefVector& tauPFChargedHadrCands = tau->signalPFChargedHadrCands();
-    for ( reco::PFCandidateRefVector::const_iterator tauPFChargedHadrCand = tauPFChargedHadrCands.begin();
+    const std::vector<reco::PFCandidatePtr>& tauPFChargedHadrCands = tau->signalPFChargedHadrCands();
+    for ( std::vector<reco::PFCandidatePtr>::const_iterator tauPFChargedHadrCand = tauPFChargedHadrCands.begin();
 	  tauPFChargedHadrCand != tauPFChargedHadrCands.end(); ++tauPFChargedHadrCand ) {
       if ( !(*tauPFChargedHadrCand)->trackRef().isNull() ) recTracks_.push_back((*tauPFChargedHadrCand)->trackRef().get());
       else if ( !(*tauPFChargedHadrCand)->gsfTrackRef().isNull() ) recTracks_.push_back((*tauPFChargedHadrCand)->gsfTrackRef().get());
@@ -167,8 +167,8 @@ matchedTauDecayType::matchedTauDecayType(const reco::GenParticle* genTau, const 
   } else if ( dynamic_cast<const pat::Tau*>(recCandidate_) ) {
     const pat::Tau* tau = dynamic_cast<const pat::Tau*>(recCandidate_);
     if ( tau->isPFTau() ) {
-      const reco::PFCandidateRefVector& tauPFChargedHadrCands = tau->signalPFChargedHadrCands();
-      for ( reco::PFCandidateRefVector::const_iterator tauPFChargedHadrCand = tauPFChargedHadrCands.begin();
+      const std::vector<reco::PFCandidatePtr>& tauPFChargedHadrCands = tau->signalPFChargedHadrCands();
+      for ( std::vector<reco::PFCandidatePtr>::const_iterator tauPFChargedHadrCand = tauPFChargedHadrCands.begin();
 	    tauPFChargedHadrCand != tauPFChargedHadrCands.end(); ++tauPFChargedHadrCand ) {
 	if ( !(*tauPFChargedHadrCand)->trackRef().isNull() ) recTracks_.push_back((*tauPFChargedHadrCand)->trackRef().get());
 	else if ( !(*tauPFChargedHadrCand)->gsfTrackRef().isNull() ) recTracks_.push_back((*tauPFChargedHadrCand)->gsfTrackRef().get());

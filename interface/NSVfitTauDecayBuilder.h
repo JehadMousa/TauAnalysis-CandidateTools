@@ -7,9 +7,9 @@
  *
  * \author Evan K. Friis, Christian Veelken, UC Davis
  *
- * \version $Revision: 1.4 $
+ * \version $Revision: 1.5 $
  *
- * $Id: NSVfitTauDecayBuilder.h,v 1.4 2012/09/01 08:45:44 veelken Exp $
+ * $Id: NSVfitTauDecayBuilder.h,v 1.5 2012/09/11 10:05:45 veelken Exp $
  *
  */
 
@@ -87,7 +87,8 @@ class NSVfitTauDecayBuilder : public NSVfitSingleParticleBuilderBase
 
     int idxFitParameter_visEnFracX_;
     int idxFitParameter_phi_lab_;
-    int idxFitParameter_nuInvMass_; // used for leptonic decays only.
+    int idxFitParameter_visMass_;   // used for hadronic decays only
+    int idxFitParameter_nuInvMass_; // used for leptonic decays only
     int idxFitParameter_deltaR_;
     
     /// optional parameters for setting reconstructed to Monte Carlo truth values
@@ -97,12 +98,14 @@ class NSVfitTauDecayBuilder : public NSVfitSingleParticleBuilderBase
     double dRmatch_;
     bool fixToGenVisEnFracX_;
     bool fixToGenPhiLab_;
+    bool fixToGenVisMass_;
     bool fixToGenNuInvMass_;
     bool fixToGenDeltaR_;
     bool fixToGenVisP4_;
     bool initializeToGen_;
     mutable double genVisEnFracX_;
     mutable double genPhiLab_;
+    mutable double genVisMass_;
     mutable double genNuInvMass_;
     mutable double genDeltaR_;
     mutable reco::Candidate::LorentzVector genVisP4_;

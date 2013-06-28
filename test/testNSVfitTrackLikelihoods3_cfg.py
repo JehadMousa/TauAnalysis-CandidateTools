@@ -8,13 +8,13 @@ import re
 import TauAnalysis.Configuration.tools.castor as castor
 from TauAnalysis.Skimming.EventContent_cff import *
 
+process.load('Configuration/StandardSequences/Services_cff')
 process.load('FWCore/MessageService/MessageLogger_cfi')
 process.MessageLogger.cerr.FwkReport.reportEvery = 100
-process.MessageLogger.cerr.threshold = cms.untracked.string('INFO')
-process.load("Configuration.StandardSequences.Geometry_cff")
-process.load("Configuration.StandardSequences.MagneticField_cff")
+process.load('Configuration/Geometry/GeometryIdeal_cff')
+process.load('Configuration/StandardSequences/MagneticField_cff')
 process.load('Configuration/StandardSequences/FrontierConditions_GlobalTag_cff')
-process.GlobalTag.globaltag = cms.string('START52_V11C::All')
+process.GlobalTag.globaltag = cms.string('START53_V15::All')
 
 process.maxEvents = cms.untracked.PSet(
     input = cms.untracked.int32(1000)
@@ -79,6 +79,8 @@ inputFileNames = []
 files = None
 if inputFilePath.startswith('/castor/'):
     files = [ "".join([ "rfio:", file_info['path'] ]) for file_info in castor.nslsl(inputFilePath) ]
+elif inputFilePath.startswith('/store/'):
+    files = [ file_info['path'] for file_info in eos.lsl(inputFilePath) ]
 else:
     files = [ "".join([ "file:", inputFilePath, file ]) for file in os.listdir(inputFilePath) ]
 for file in files:
@@ -126,6 +128,15 @@ elif sample_type == 'Higgs':
     genTaus = 'genTausFromAHs'
 else:
     raise ValueError("Invalid sample type = %s !!" % sample_type)
+
+# CV: require that generator level tau lepton pair is within 0.70..1.30 of "nominal" mass point,
+#     in order to cut low mass tail present in MSSM gg -> Phi Monte Carlo samples
+process.genTauPairMassFilter = cms.EDFilter("CandViewSelector",
+    src = cms.InputTag(genTauPairs),
+    cut = cms.string('mass > %1.1f & mass < %1.1f' % (0.70*massPoint, 1.30*massPoint))
+    filter = cms.bool(True)
+)
+process.testSVfitTrackLikelihoodProductionSequence += process.process.genTauPairMassFilter
 
 process.load("TauAnalysis/Skimming/goldenZmmSelectionVBTFnoMuonIsolation_cfi")
 process.goodMuons. cut = cms.string(

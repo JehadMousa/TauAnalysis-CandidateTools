@@ -30,7 +30,7 @@ neuralMtautauSequence += selectedPatJetsPt20ForNeuralMtautau
 # select ak5PFJets corresponding to selected pat::Jets
 ak5PFJetsNotOverlappingWithLeptonsCorrPtGt20ForNeuralMtautau = cms.EDFilter("PFJetAntiOverlapSelector",
     src = cms.InputTag('ak5PFJets'),
-    srcNotToBeFiltered = cms.VInputTag('selectedPatJetsPt20'),
+    srcNotToBeFiltered = cms.VInputTag('selectedPatJetsPt20ForNeuralMtautau'),
     dRmin = cms.double(1.e-1),
     invert = cms.bool(True),
     filter = cms.bool(False)                                                          

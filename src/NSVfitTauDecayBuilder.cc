@@ -38,6 +38,7 @@ NSVfitTauDecayBuilder::NSVfitTauDecayBuilder(const edm::ParameterSet& cfg)
 
   fixToGenVisEnFracX_ = ( cfg.exists("fixToGenVisEnFracX") ) ? cfg.getParameter<bool>("fixToGenVisEnFracX")  : false;
   fixToGenPhiLab_     = ( cfg.exists("fixToGenPhiLab")     ) ? cfg.getParameter<bool>("fixToGenPhiLab")      : false;
+  fixToGenVisMass_    = ( cfg.exists("fixToGenVisMass")    ) ? cfg.getParameter<bool>("fixToGenVisMass")     : false;
   fixToGenNuInvMass_  = ( cfg.exists("fixToGenNuInvMass")  ) ? cfg.getParameter<bool>("fixToGenNuInvMass")   : false;
   fixToGenDeltaR_     = ( cfg.exists("fixToGenDeltaR")     ) ? cfg.getParameter<bool>("fixToGenDeltaR")      : false;
   fixToGenVisP4_      = ( cfg.exists("fixToGenVisP4")      ) ? cfg.getParameter<bool>("fixToGenVisP4")       : false;
@@ -45,6 +46,7 @@ NSVfitTauDecayBuilder::NSVfitTauDecayBuilder(const edm::ParameterSet& cfg)
   initializeToGen_    = ( cfg.exists("initializeToGen")    ) ? cfg.getParameter<bool>("initializeToGen")     : false;
   if ( fixToGenVisEnFracX_ || 
        fixToGenPhiLab_     ||
+       fixToGenVisMass_    ||
        fixToGenNuInvMass_  ||
        fixToGenDeltaR_     ||
        fixToGenVisP4_      ) {
@@ -69,6 +71,7 @@ void NSVfitTauDecayBuilder::beginJob(NSVfitAlgorithmBase* algorithm)
   // Map the fit parameters to indices.
   idxFitParameter_visEnFracX_ = getFitParameterIdx(algorithm, prodParticleLabel_, nSVfit_namespace::kTau_visEnFracX);
   idxFitParameter_phi_lab_    = getFitParameterIdx(algorithm, prodParticleLabel_, nSVfit_namespace::kTau_phi_lab);
+  idxFitParameter_visMass_    = getFitParameterIdx(algorithm, prodParticleLabel_, nSVfit_namespace::kTau_visMass, true);
   idxFitParameter_nuInvMass_  = getFitParameterIdx(algorithm, prodParticleLabel_, nSVfit_namespace::kTau_nuInvMass, true);
   idxFitParameter_deltaR_     = getFitParameterIdx(algorithm, prodParticleLabel_, nSVfit_namespace::kTau_decayDistance_lab_shift, true);
 #ifdef SVFIT_DEBUG 
@@ -77,12 +80,14 @@ void NSVfitTauDecayBuilder::beginJob(NSVfitAlgorithmBase* algorithm)
     std::cout << " pluginName = " << pluginName_ << std::endl;
     std::cout << " idxFitParameter_visEnFracX = " << idxFitParameter_visEnFracX_ << std::endl;
     std::cout << " idxFitParameter_phi_lab = " << idxFitParameter_phi_lab_ << std::endl;
+    std::cout << " idxFitParameter_visMass = " << idxFitParameter_visMass_ << std::endl;
     std::cout << " idxFitParameter_nuInvMass = " << idxFitParameter_nuInvMass_ << std::endl;
     std::cout << " idxFitParameter_deltaR_ = " << idxFitParameter_deltaR_ << std::endl;
   }
 #endif
   if ( fixToGenVisEnFracX_ && idxFitParameter_visEnFracX_  != -1 ) algorithm->fixFitParameter(idxFitParameter_visEnFracX_);
   if ( fixToGenPhiLab_     && idxFitParameter_phi_lab_     != -1 ) algorithm->fixFitParameter(idxFitParameter_phi_lab_);
+  if ( fixToGenVisMass_    && idxFitParameter_visMass_     != -1 ) algorithm->fixFitParameter(idxFitParameter_visMass_);
   if ( fixToGenNuInvMass_  && idxFitParameter_nuInvMass_   != -1 ) algorithm->fixFitParameter(idxFitParameter_nuInvMass_);
   if ( fixToGenDeltaR_     && idxFitParameter_deltaR_      != -1 ) algorithm->fixFitParameter(idxFitParameter_deltaR_);
 }
@@ -118,10 +123,11 @@ namespace
 void NSVfitTauDecayBuilder::initialize(NSVfitTauDecayHypothesis* hypothesis, const reco::Candidate* visCandidate) const
 {
   hypothesis->p3Vis_unit_ = visCandidate->p4().Vect().Unit();
+  
   hypothesis->visMass_ = visCandidate->mass();
 
-  // Add protection against zero mass.  
-  // If lower than the electron mass, set it to the electron mass.
+  // Add protection against zero mass:  
+  // if lower than the electron mass, set it to the electron mass
   if ( hypothesis->visMass_ < 5.1e-4 ) {
     hypothesis->visMass_ = 5.1e-4;
   }
@@ -240,6 +246,7 @@ void NSVfitTauDecayBuilder::initialize(NSVfitTauDecayHypothesis* hypothesis, con
 	      std::cout << "initializing:" << std::endl;
 	      std::cout << " genVisEnFracX = " << genVisEnFracX_ << std::endl;
 	      std::cout << " genPhiLab = " << genPhiLab_ << std::endl;
+	      std::cout << " genVisInvMass = " << genVisP4_.mass() << std::endl;
 	      std::cout << " genNuInvMass = " << genNuInvMass_ << std::endl;
 	      std::cout << " genDeltaR = " << genDeltaR_ << std::endl;
 	      std::cout << " genVisP4: Pt = " << genVisP4_.pt() << ", eta = " << genVisP4_.eta() << ", phi = " << genVisP4_.phi() << std::endl;
@@ -265,6 +272,7 @@ void NSVfitTauDecayBuilder::initialize(NSVfitTauDecayHypothesis* hypothesis, con
 
     if ( idxFitParameter_visEnFracX_  != -1 ) algorithm_->setFitParameterInitialValue(idxFitParameter_visEnFracX_, genVisEnFracX_);
     if ( idxFitParameter_phi_lab_     != -1 ) algorithm_->setFitParameterInitialValue(idxFitParameter_phi_lab_,    genPhiLab_);
+    if ( idxFitParameter_visMass_     != -1 ) algorithm_->setFitParameterInitialValue(idxFitParameter_visMass_,    genVisMass_);
     if ( idxFitParameter_nuInvMass_   != -1 ) algorithm_->setFitParameterInitialValue(idxFitParameter_nuInvMass_,  genNuInvMass_);
   }
 }
@@ -373,6 +381,11 @@ bool NSVfitTauDecayBuilder::applyFitParameter(NSVfitSingleParticleHypothesis* hy
   NSVfitTauDecayHypothesis* hypothesis_T = dynamic_cast<NSVfitTauDecayHypothesis*>(hypothesis);
   assert(hypothesis_T);
   
+  if ( idxFitParameter_visMass_  != -1 ) {
+    if ( fixToGenVisMass_ ) hypothesis_T->visMass_ = genVisMass_;
+    else hypothesis_T->visMass_ = param[idxFitParameter_visMass_];
+  }
+
   double visEnFracX = param[idxFitParameter_visEnFracX_];
   double phi_lab    = param[idxFitParameter_phi_lab_];
   double pVis_lab   = hypothesis_T->p4().P();
@@ -410,6 +423,7 @@ bool NSVfitTauDecayBuilder::applyFitParameter(NSVfitSingleParticleHypothesis* hy
     std::cout << " enVis_lab = " << enVis_lab << std::endl;
     std::cout << "(fixToGenVisEnFracX = " << fixToGenVisEnFracX_ << ")" << std::endl;
     std::cout << "(fixToGenPhiLab = " << fixToGenPhiLab_ << ")" << std::endl;
+    std::cout << "(fixToGenVisMass = " << fixToGenVisMass_ << ")" << std::endl;
     std::cout << "(fixToGenNuInvMass = " << fixToGenNuInvMass_ << ")" << std::endl;
     std::cout << " assert TRIGGERED !!!" << std::endl;
   }
@@ -420,7 +434,7 @@ bool NSVfitTauDecayBuilder::applyFitParameter(NSVfitSingleParticleHypothesis* hy
 //--- compute Gottfried-Jackson angle
 //   (angle of visible decay products wrt. tau lepton flight direction)
   double cosGjAngle_rf = (visEnFracX*tauLeptonMass - enVis_rf)/(beta*pVis_rf);  
-  if        ( cosGjAngle_rf < -1. ) {
+  if ( cosGjAngle_rf < -1. ) {
 #ifdef SVFIT_DEBUG 
     if ( verbosity_ >= 2 ) std::cout << "cosGjAngle_rf = " << cosGjAngle_rf << " --> setting isValidSolution = false." << std::endl;
 #endif
@@ -550,6 +564,7 @@ void NSVfitTauDecayBuilder::print(std::ostream& stream) const
   stream << " prodParticleLabel = " << prodParticleLabel_ << std::endl;
   stream << " idxFitParameter_visEnFracX = " << idxFitParameter_visEnFracX_ << std::endl;
   stream << " idxFitParameter_phi_lab = " << idxFitParameter_phi_lab_ << std::endl;
+  stream << " idxFitParameter_visMass = " << idxFitParameter_visMass_ << std::endl;
   stream << " idxFitParameter_nuInvMass = " << idxFitParameter_nuInvMass_ << std::endl;
 }
 

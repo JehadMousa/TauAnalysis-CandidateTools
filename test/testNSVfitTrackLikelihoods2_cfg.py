@@ -9,13 +9,13 @@ import TauAnalysis.Configuration.tools.castor as castor
 import TauAnalysis.Configuration.tools.eos as eos
 from TauAnalysis.Skimming.EventContent_cff import *
 
+process.load('Configuration/StandardSequences/Services_cff')
 process.load('FWCore/MessageService/MessageLogger_cfi')
-process.MessageLogger.cerr.FwkReport.reportEvery = 1
-process.MessageLogger.cerr.threshold = cms.untracked.string('INFO')
-process.load("Configuration.StandardSequences.Geometry_cff")
-process.load("Configuration.StandardSequences.MagneticField_cff")
+process.MessageLogger.cerr.FwkReport.reportEvery = 100
+process.load('Configuration/Geometry/GeometryIdeal_cff')
+process.load('Configuration/StandardSequences/MagneticField_cff')
 process.load('Configuration/StandardSequences/FrontierConditions_GlobalTag_cff')
-process.GlobalTag.globaltag = cms.string('START52_V11C::All')
+process.GlobalTag.globaltag = cms.string('START53_V15::All')
 
 process.maxEvents = cms.untracked.PSet(
     input = cms.untracked.int32(2500)
@@ -48,10 +48,10 @@ sample_type = 'Higgs'
 channel = 'mutau'
 #channel = 'emu'
 #massPoint = '125'
-#massPoint = '300'
-massPoint = '800'
+massPoint = '300'
 #qTmin = 50.
-qTmin = 20.
+#qTmin = 20.
+qTmin = -1.
 #--------------------------------------------------------------------------------
 
 #--------------------------------------------------------------------------------
@@ -71,14 +71,13 @@ if sample_type == 'Z':
 inputFilePath = None
 inputFile_regex = None
 if sample_type == 'Z':
-    inputFilePath = '/data1/veelken/CMSSW_5_2_x/skims/genHtautauLeptonPairAcc/user/veelken/CMSSW_5_2_x/skims/'
+    inputFilePath = '/store/user/veelken/CMSSW_5_3_x/skims/SVfitStudies/AccLowPtThresholds/ZplusJets_mutau'
     inputFile_regex = \
-      r"[a-zA-Z0-9_/:.]*genTauLeptonsPairAccSkim_ZplusJets_%s_(?P<gridJob>\d*)(_(?P<gridTry>\d*))*_(?P<hash>[a-zA-Z0-9]*).root" % channel
+      r"[a-zA-Z0-9_/:.]*genTauLeptonPairSkim_ZplusJets_%s_(?P<gridJob>\d*)(_(?P<gridTry>\d*))*_(?P<hash>[a-zA-Z0-9]*).root" % channel
 elif sample_type == 'Higgs':
-    ##inputFilePath = '/data1/veelken/CMSSW_5_2_x/skims/genHtautauLeptonPairAcc/user/v/veelken/CMSSW_5_2_x/skims/' # for all samples except ggPhi_800 
-    inputFilePath = '/data1/veelken/CMSSW_5_2_x/skims/genHtautauLeptonPairAcc/' # for ggPhi_800 sample
+    inputFilePath = '/store/user/veelken/CMSSW_5_3_x/skims/SVfitStudies/AccLowPtThresholds/ggPhi300_mutau/'
     inputFile_regex = \
-      r"[a-zA-Z0-9_/:.]*genTauLeptonsPairAccSkim_(ggHiggs|ggPhi|vbfHiggs)%s_%s_(?P<gridJob>\d*)(_(?P<gridTry>\d*))*_(?P<hash>[a-zA-Z0-9]*).root" % (massPoint, channel)
+      r"[a-zA-Z0-9_/:.]*genTauLeptonPairSkim_(ggHiggs|ggPhi|vbfHiggs)%s_%s_(?P<gridJob>\d*)(_(?P<gridTry>\d*))*_(?P<hash>[a-zA-Z0-9]*).root" % (massPoint, channel)
 else:
     raise ValueError("Invalid sample type = %s !!" % sample_type)
 
@@ -136,6 +135,15 @@ elif sample_type == 'Higgs':
     genTaus = 'genTausFromAHs'
 else:
     raise ValueError("Invalid sample type = %s !!" % sample_type)
+
+# CV: require that generator level tau lepton pair is within 0.70..1.30 of "nominal" mass point,
+#     in order to cut low mass tail present in MSSM gg -> Phi Monte Carlo samples
+process.genTauPairMassFilter = cms.EDFilter("CandViewSelector",
+    src = cms.InputTag(genTauPairs),
+    cut = cms.string('mass > %1.1f & mass < %1.1f' % (0.70*massPoint, 1.30*massPoint))
+    filter = cms.bool(True)
+)
+process.testSVfitTrackLikelihoodProductionSequence += process.process.genTauPairMassFilter
 
 process.load("TauAnalysis/Skimming/goldenZmmSelectionVBTFnoMuonIsolation_cfi")
 process.goodMuons. cut = cms.string(
@@ -552,14 +560,13 @@ else:
 nSVfitProducerModuleNames = dict()
 svFitAnalyzerModuleTypes = dict()
 
-##for option in [ 1, 2, 3, 4, 5, 6, 7, 8, 9 ]:
-for option in [ 5, 9 ]:
+for option in [ '5a', '5b' ]:
         
     nSVfitProducerModule = None
     nSVfitProducerModuleName = None
     svFitAnalyzerModuleType = None
     
-    if option == 1:
+    if option == '1':
         # option 1: VEGAS integration of likelihood functions, no tracking information used
         nSVfitProducerModule = process.nSVfitProducerByIntegration.clone()
         nSVfitProducerModule.config.event.resonances.A.daughters.leg1.src = cms.InputTag(srcRecLeg1)
@@ -577,7 +584,7 @@ for option in [ 5, 9 ]:
         nSVfitProducerModule.algorithm.verbosity = cms.int32(1)
         nSVfitProducerModuleName = "nSVfitProducerByIntegrationWOtracks"
         svFitAnalyzerModuleType = "NSVfitEventHypothesisByIntegrationAnalyzer"
-    elif option == 2:
+    elif option == '2':
         if channel in [ "mutau", "etau", "ditau" ]:
             # option 2: VEGAS integration of likelihood functions,
             #           tracking information used for 3-prongs only,
@@ -610,7 +617,7 @@ for option in [ 5, 9 ]:
             nSVfitProducerModule.algorithm.verbosity = cms.int32(1)
             nSVfitProducerModuleName = "nSVfitProducerByIntegrationWtracksFor3prongsOnlyWlifetimeConstraint"
             svFitAnalyzerModuleType = "NSVfitEventHypothesisByIntegrationAnalyzer"
-    elif option == 3:
+    elif option == '3':
         if channel in [ "mutau", "etau", "ditau" ]:
             # option 3: VEGAS integration of likelihood functions,
             #           tracking information used for 3-prongs only,
@@ -643,7 +650,7 @@ for option in [ 5, 9 ]:
             nSVfitProducerModule.algorithm.verbosity = cms.int32(1)
             nSVfitProducerModuleName = "nSVfitProducerByIntegrationWtracksFor3prongsOnlyWOlifetimeConstraint"
             svFitAnalyzerModuleType = "NSVfitEventHypothesisByIntegrationAnalyzer"        
-    elif option == 4:
+    elif option == '4':
         # option 4: VEGAS integration of likelihood functions,
         #           tracking information used for all tau decays
         nSVfitProducerModule = process.nSVfitProducerByIntegration.clone()
@@ -669,15 +676,29 @@ for option in [ 5, 9 ]:
         nSVfitProducerModule.algorithm.verbosity = cms.int32(1)
         nSVfitProducerModuleName = "nSVfitProducerByIntegrationWtracksFor1prongsAnd3prongs"
         svFitAnalyzerModuleType = "NSVfitEventHypothesisByIntegrationAnalyzer"        
-    elif option == 5:
+    elif option == '5a' or option == '5b':
         # option 5: Markov Chain integration of likelihood functions, no tracking information used
+        nSVfitLikelihoodLeg1_kinematics_cloned = nSVfitLikelihoodLeg1_kinematics.clone()
+        nSVfitLikelihoodLeg2_kinematics_cloned = nSVfitLikelihoodLeg2_kinematics.clone()
+        if channel == 'mutau' or channel == 'etau':
+            if option == '5a':
+                nSVfitLikelihoodLeg2_kinematics_cloned.applyVisMassFactor = cms.bool(False)
+            elif option == '5b':
+                nSVfitLikelihoodLeg2_kinematics_cloned.applyVisMassFactor = cms.bool(True)
+        elif channel == 'ditau':
+            if option == '5a':
+                nSVfitLikelihoodLeg1_kinematics_cloned.applyVisMassFactor = cms.bool(False)
+                nSVfitLikelihoodLeg2_kinematics_cloned.applyVisMassFactor = cms.bool(False)
+            elif option == '5b':
+                nSVfitLikelihoodLeg1_kinematics_cloned.applyVisMassFactor = cms.bool(True)
+                nSVfitLikelihoodLeg2_kinematics_cloned.applyVisMassFactor = cms.bool(True)
         nSVfitProducerModule = process.nSVfitProducerByIntegration2.clone()
         nSVfitProducerModule.config.event.resonances.A.daughters.leg1.src = cms.InputTag(srcRecLeg1)
-        nSVfitProducerModule.config.event.resonances.A.daughters.leg1.likelihoodFunctions = cms.VPSet(nSVfitLikelihoodLeg1_kinematics)
+        nSVfitProducerModule.config.event.resonances.A.daughters.leg1.likelihoodFunctions = cms.VPSet(nSVfitLikelihoodLeg1_kinematics_cloned)
         nSVfitProducerModule.config.event.resonances.A.daughters.leg1.likelihoodFunctions[0].applySinThetaFactor = cms.bool(False)
         nSVfitProducerModule.config.event.resonances.A.daughters.leg1.builder = nSVfitBuilderLeg1
         nSVfitProducerModule.config.event.resonances.A.daughters.leg2.src = cms.InputTag(srcRecLeg2)
-        nSVfitProducerModule.config.event.resonances.A.daughters.leg2.likelihoodFunctions = cms.VPSet(nSVfitLikelihoodLeg2_kinematics)
+        nSVfitProducerModule.config.event.resonances.A.daughters.leg2.likelihoodFunctions = cms.VPSet(nSVfitLikelihoodLeg2_kinematics_cloned)
         nSVfitProducerModule.config.event.resonances.A.daughters.leg2.likelihoodFunctions[0].applySinThetaFactor = cms.bool(False)
         nSVfitProducerModule.config.event.resonances.A.daughters.leg2.builder = nSVfitBuilderLeg2
         nSVfitProducerModule.config.event.resonances.A.likelihoodFunctions = cms.VPSet()
@@ -700,11 +721,17 @@ for option in [ 5, 9 ]:
         nSVfitProducerModule.algorithm.markovChainOptions.epsilon0 = cms.double(1.e-2)
         nSVfitProducerModule.algorithm.monitorMarkovChain = cms.bool(False)
         nSVfitProducerModule.algorithm.max_or_median = cms.string("max")
-        nSVfitProducerModule.algorithm.pluginName = cms.string("nSVfitProducerByIntegration2WOtracksMax")
+        if option == '5a':
+            nSVfitProducerModule.algorithm.pluginName = cms.string("nSVfitProducerByIntegration2WOtracksMaxWOvisMassFactor")
+        elif option == '5b':
+            nSVfitProducerModule.algorithm.pluginName = cms.string("nSVfitProducerByIntegration2WOtracksMaxWvisMassFactor")
         nSVfitProducerModule.algorithm.verbosity = cms.int32(1)
-        nSVfitProducerModuleName = "nSVfitProducerByIntegration2WOtracksMax"
+        if option == '5a':
+            nSVfitProducerModuleName = "nSVfitProducerByIntegration2WOtracksMaxWOvisMassFactor"
+        elif option == '5b':
+            nSVfitProducerModuleName = "nSVfitProducerByIntegration2WOtracksMaxWvisMassFactor"
         svFitAnalyzerModuleType = "NSVfitEventHypothesisAnalyzer"
-    elif option == 6:
+    elif option == '6':
         if channel in [ "mutau", "etau", "ditau" ]:
             # option 6: Markov Chain integration of likelihood functions, tracking information used for 3-prongs only,
             #           usage of tau life-time information enabled
@@ -747,7 +774,7 @@ for option in [ 5, 9 ]:
             nSVfitProducerModule.algorithm.verbosity = cms.int32(1)
             nSVfitProducerModuleName = "nSVfitProducerByIntegration2WtracksFor3prongsOnlyWlifetimeConstraint"
             svFitAnalyzerModuleType = "NSVfitEventHypothesisAnalyzer"
-    elif option == 7:
+    elif option == '7':
         if channel in [ "mutau", "etau", "ditau" ]:
             # option 7: Markov Chain integration of likelihood functions, tracking information used for 3-prongs only,
             #           usage of tau life-time information disabled
@@ -784,7 +811,7 @@ for option in [ 5, 9 ]:
             nSVfitProducerModule.algorithm.verbosity = cms.int32(1)
             nSVfitProducerModuleName = "nSVfitProducerByIntegration2WtracksFor3prongsOnlyWOlifetimeConstraint"
             svFitAnalyzerModuleType = "NSVfitEventHypothesisAnalyzer"        
-    elif option == 8:
+    elif option == '8':
         # option 8: Markov Chain integration of likelihood functions, tracking information used for all tau decays
         nSVfitProducerModule = process.nSVfitProducerByIntegration2.clone()
         nSVfitProducerModule.config.event.resonances.A.daughters.leg1.src = cms.InputTag(srcRecLeg1)
@@ -819,9 +846,9 @@ for option in [ 5, 9 ]:
         nSVfitProducerModule.algorithm.verbosity = cms.int32(1)
         nSVfitProducerModuleName = "nSVfitProducerByIntegration2WtracksFor1prongsAnd3prongsMax"
         svFitAnalyzerModuleType = "NSVfitEventHypothesisAnalyzer"
-    elif option == 9:
+    elif option == '9':
         # option 9: Markov Chain integration of likelihood functions, no tracking information used;
-        #           new NSVfitEventLikelihverbosity_ >= 1 && oodMEt3 used
+        #           new NSVfitEventLikelihoodMEt3 used
         nSVfitProducerModule = process.nSVfitProducerByIntegration2.clone()
         nSVfitProducerModule.config.event.resonances.A.daughters.leg1.src = cms.InputTag(srcRecLeg1)
         nSVfitProducerModule.config.event.resonances.A.daughters.leg1.likelihoodFunctions = cms.VPSet(nSVfitLikelihoodLeg1_kinematics)
@@ -933,7 +960,7 @@ process.p = cms.Path(process.testSVfitTrackLikelihoodSequence)
 # than SVfit mass reconstructed without using track information
 # in likelihood model
 
-for option1_vs_2 in [ [ 1, 2 ], [ 1, 3 ], [ 1, 4 ], [ 5, 6 ], [ 5, 7 ], [ 5, 8 ] ]:
+for option1_vs_2 in [ [ '1', '2' ], [ '1', '3' ], [ '1', '4' ], [ '5a', '6' ], [ '5a', '7' ], [ '5a', '8' ] ]:
         
     option1 = option1_vs_2[0]
     if not option1 in nSVfitProducerModuleNames:

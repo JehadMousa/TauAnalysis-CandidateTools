@@ -9,9 +9,9 @@
  *
  * \author Evan Friis, Christian Veelken; UC Davis
  *
- * \version $Revision: 1.5 $
+ * \version $Revision: 1.6 $
  *
- * $Id: SVfitLegTrackExtractor.h,v 1.5 2011/03/31 16:31:33 veelken Exp $
+ * $Id: SVfitLegTrackExtractor.h,v 1.6 2011/06/03 13:35:51 veelken Exp $
  *
  */
 
@@ -88,7 +88,7 @@ class SVfitLegTrackExtractor<pat::Tau>
   {
     //std::cout << "<SVfitLegTrackExtractor<pat::Tau>::operator()>:" << std::endl;
     std::vector<reco::TrackBaseRef> tracks;
-    const reco::PFCandidateRefVector& signalChargedHadrons = tau.signalPFChargedHadrCands();
+    const std::vector<reco::PFCandidatePtr>& signalChargedHadrons = tau.signalPFChargedHadrCands();
     unsigned numChargedHadrons = signalChargedHadrons.size();
     for ( unsigned iChargedHadron = 0; iChargedHadron < numChargedHadrons; ++iChargedHadron ) {
       if ( isValidRef(signalChargedHadrons.at(iChargedHadron)->trackRef()) ) 

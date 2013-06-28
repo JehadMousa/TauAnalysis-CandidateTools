@@ -7,9 +7,9 @@
  *
  * \author Evan Friis, Christian Veelken; UC Davis
  *
- * \version $Revision: 1.19 $
+ * \version $Revision: 1.20 $
  *
- * $Id: NSVfitTauToLepBuilder.cc,v 1.19 2012/03/26 15:47:49 veelken Exp $
+ * $Id: NSVfitTauToLepBuilder.cc,v 1.20 2012/08/28 15:00:23 veelken Exp $
  *
  */
 
@@ -58,7 +58,7 @@ class NSVfitTauToLepBuilder : public NSVfitTauDecayBuilder
     return hypothesis;
   }
 
-  // The two neutrion system in a leptonic tau decay can have non-zero mass.
+  // The two neutrino system in leptonic tau decays can have non-zero mass
   bool nuSystemIsMassless() const { return false; }
   
   virtual int getDecayMode(const reco::Candidate* candidate) const 

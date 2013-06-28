@@ -97,6 +97,7 @@ std::string get_name_incl_type(const std::string& name, int type)
   else if ( type == nSVfit_namespace::kTau_visEnFracX              ) retVal.append("visEnFracX");
   else if ( type == nSVfit_namespace::kTau_phi_lab                 ) retVal.append("phi_lab");
   else if ( type == nSVfit_namespace::kTau_decayDistance_lab_shift ) retVal.append("decayDistance_lab_shift");
+  else if ( type == nSVfit_namespace::kTau_visMass                 ) retVal.append("visMass");
   else if ( type == nSVfit_namespace::kTau_nuInvMass               ) retVal.append("nuInvMass");
   else if ( type == nSVfit_namespace::kLep_shiftEn                 ) retVal.append("shiftEn");
   else if ( type == nSVfit_namespace::kNu_energy_lab               ) retVal.append("energy_lab");
@@ -124,7 +125,8 @@ void NSVfitParameter::initializeDefaultValues()
   defaultInitialValues_[nSVfit_namespace::kTau_visEnFracX]              =  0.5;
   defaultInitialValues_[nSVfit_namespace::kTau_phi_lab]                 =  0.;
   defaultInitialValues_[nSVfit_namespace::kTau_decayDistance_lab_shift] =  0.; 
-  defaultInitialValues_[nSVfit_namespace::kTau_nuInvMass]               =  0.8;  // GeV
+  defaultInitialValues_[nSVfit_namespace::kTau_visMass]                 =  0.8; // GeV
+  defaultInitialValues_[nSVfit_namespace::kTau_nuInvMass]               =  0.8; // GeV
   defaultInitialValues_[nSVfit_namespace::kLep_shiftEn]                 =  0.;
   defaultInitialValues_[nSVfit_namespace::kNu_energy_lab]               =  0.;
   defaultInitialValues_[nSVfit_namespace::kNu_phi_lab]                  =  0.;
@@ -139,6 +141,7 @@ void NSVfitParameter::initializeDefaultValues()
   defaultLimits_[nSVfit_namespace::kTau_visEnFracX]                     = pdouble(          0.,            1.);  // dimensionless
   defaultLimits_[nSVfit_namespace::kTau_phi_lab]                        = pdouble(-TMath::Pi(),  +TMath::Pi());  // rad
   defaultLimits_[nSVfit_namespace::kTau_decayDistance_lab_shift]        = pdouble(        -2.5,           +2.5); // cm
+  defaultLimits_[nSVfit_namespace::kTau_visMass]                        = pdouble(chargedPionMass, tauLeptonMass); // GeV
   defaultLimits_[nSVfit_namespace::kTau_nuInvMass]                      = pdouble(          0., tauLeptonMass);  // GeV
   defaultLimits_[nSVfit_namespace::kLep_shiftEn]                        = pdouble(          0.,           10.);  // relative to measured lepton energy
   defaultLimits_[nSVfit_namespace::kNu_energy_lab]                      = pdouble(          0.,         1.e+3);  // GeV
@@ -154,6 +157,7 @@ void NSVfitParameter::initializeDefaultValues()
   defaultStepSizes_[nSVfit_namespace::kTau_visEnFracX]                  =  0.1;
   defaultStepSizes_[nSVfit_namespace::kTau_phi_lab]                     =  0.25;
   defaultStepSizes_[nSVfit_namespace::kTau_decayDistance_lab_shift]     =  0.01;
+  defaultStepSizes_[nSVfit_namespace::kTau_visMass]                     =  0.1;
   defaultStepSizes_[nSVfit_namespace::kTau_nuInvMass]                   =  0.1;
   defaultStepSizes_[nSVfit_namespace::kLep_shiftEn]                     =  0.01;
   defaultStepSizes_[nSVfit_namespace::kNu_energy_lab]                   = 10.;

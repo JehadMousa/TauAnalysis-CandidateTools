@@ -66,6 +66,9 @@ nSVfitTauLikelihoodPhaseSpace = cms.PSet(
     pluginName = cms.string("nSVfitTauToHadLikelihoodPhaseSpace"),
     pluginType = cms.string("NSVfitTauToHadLikelihoodPhaseSpace"),
     applySinThetaFactor = cms.bool(False),
+    applyVisMassFactor = cms.bool(False),
+    inputFileName = cms.FileInPath("TauAnalysis/CandidateTools/data/genTauMassAnalyzer.root"),
+    histogramName = cms.string('DQMData/genTauMassAnalyzer/genTauJetMass'),
     verbosity = cms.int32(0)
 )
 

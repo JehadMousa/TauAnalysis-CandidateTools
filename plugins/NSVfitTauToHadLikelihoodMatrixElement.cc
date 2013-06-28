@@ -332,12 +332,12 @@ double getZdistinguishablePion_threeProngHypothesis(const pat::Tau* tauJet)
 //--- find "distinguishable" pion
 //   (assuming reconstructed tau-jet is due to a 3-prong decay)
   double z = -1.;
-  const reco::PFCandidateRefVector& tauSignalPFChargedHadrons = tauJet->signalPFChargedHadrCands();
+  const std::vector<reco::PFCandidatePtr>& tauSignalPFChargedHadrons = tauJet->signalPFChargedHadrCands();
   if ( tauSignalPFChargedHadrons.size() == 1 ) {
     z = tauJet->leadPFChargedHadrCand()->energy()/tauJet->energy();
   } else if ( tauSignalPFChargedHadrons.size() == 3 ) {
     int tauCharge = tauJet->charge();
-    for ( reco::PFCandidateRefVector::const_iterator tauSignalPFChargedHadron = tauSignalPFChargedHadrons.begin();
+    for ( std::vector<reco::PFCandidatePtr>::const_iterator tauSignalPFChargedHadron = tauSignalPFChargedHadrons.begin();
 	  tauSignalPFChargedHadron != tauSignalPFChargedHadrons.end(); ++tauSignalPFChargedHadron ) {
       if ( ((*tauSignalPFChargedHadron)->charge()*tauCharge) < -0.5 ) z = (*tauSignalPFChargedHadron)->energy()/tauJet->energy();
     }

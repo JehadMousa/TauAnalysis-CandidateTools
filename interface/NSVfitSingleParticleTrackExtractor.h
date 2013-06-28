@@ -9,9 +9,9 @@
  *
  * \author Evan Friis, Christian Veelken; UC Davis
  *
- * \version $Revision: 1.4 $
+ * \version $Revision: 1.1 $
  *
- * $Id: NSVfitSingleParticleTrackExtractor.h,v 1.4 2011/03/31 15:00:38 veelken Exp $
+ * $Id: NSVfitSingleParticleTrackExtractor.h,v 1.1 2011/03/31 16:32:02 veelken Exp $
  *
  */
 
@@ -88,7 +88,7 @@ class NSVfitSingleParticleTrackExtractor<pat::Tau>
   {
     //std::cout << "<NSVfitSingleParticleTrackExtractor<pat::Tau>::operator()>:" << std::endl;
     std::vector<const reco::Track*> tracks;
-    const reco::PFCandidateRefVector& signalChargedHadrons = tau.signalPFChargedHadrCands();
+    const std::vector<reco::PFCandidatePtr>& signalChargedHadrons = tau.signalPFChargedHadrCands();
     unsigned numChargedHadrons = signalChargedHadrons.size();
     for ( unsigned iChargedHadron = 0; iChargedHadron < numChargedHadrons; ++iChargedHadron ) {
       if ( isValidRef(signalChargedHadrons.at(iChargedHadron)->trackRef()) ) 

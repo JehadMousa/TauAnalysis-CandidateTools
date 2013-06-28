@@ -1,30 +1,55 @@
 #include "TauAnalysis/CandidateTools/plugins/NSVfitTauToHadLikelihoodPhaseSpace.h"
 
+#include "FWCore/ParameterSet/interface/FileInPath.h"
+
 #include "TauAnalysis/CandidateTools/interface/NSVfitAlgorithmBase.h"
 #include "TauAnalysis/CandidateTools/interface/svFitAuxFunctions.h"
 
 #include "AnalysisDataFormats/TauAnalysis/interface/NSVfitTauToHadHypothesis.h"
 
+#include <TFile.h>
 #include <TMath.h>
 
 using namespace SVfit_namespace;
 
 NSVfitTauToHadLikelihoodPhaseSpace::NSVfitTauToHadLikelihoodPhaseSpace(const edm::ParameterSet& cfg)
-  : NSVfitSingleParticleLikelihood(cfg)
+  : NSVfitSingleParticleLikelihood(cfg),
+    histogram_(0)
 {
   applySinThetaFactor_ = cfg.exists("applySinThetaFactor") ?
     cfg.getParameter<bool>("applySinThetaFactor") : false;
+
+  applyVisMassFactor_ = cfg.getParameter<bool>("applyVisMassFactor");
+  if ( applyVisMassFactor_ ) {
+    edm::FileInPath inputFileName = cfg.getParameter<edm::FileInPath>("inputFileName");
+    if ( !inputFileName.isLocal() ) 
+      throw cms::Exception("NSVfitTauToHadLikelihoodPhaseSpace") 
+	<< " Failed to find File = " << inputFileName << " !!\n";
+    std::string histogramName = cfg.getParameter<std::string>("histogramName");
+    TFile* inputFile = new TFile(inputFileName.fullPath().data());
+    TH1* histogramTmp = dynamic_cast<TH1*>(inputFile->Get(histogramName.data()));
+    if ( !histogramTmp )
+      throw cms::Exception("NSVfitTauToHadLikelihoodPhaseSpace") 
+	<< " Failed to load visMassHistogram = " << histogramName.data() << " from file = " << inputFileName.fullPath().data() << " !!\n";
+    histogram_ = (TH1*)histogramTmp->Clone(std::string(pluginName_).append("_").append(histogramTmp->GetName()).data());
+    firstBin_ = 1;
+    lastBin_ = histogram_->GetNbinsX();
+    delete inputFile;
+  }
 }
 
 NSVfitTauToHadLikelihoodPhaseSpace::~NSVfitTauToHadLikelihoodPhaseSpace()
 {
-// nothing to be done yet...
+  delete histogram_;
 }
 
 void NSVfitTauToHadLikelihoodPhaseSpace::beginJob(NSVfitAlgorithmBase* algorithm)
 {
-  algorithm->requestFitParameter(prodParticleLabel_, nSVfit_namespace::kTau_visEnFracX, pluginName_);
-  algorithm->requestFitParameter(prodParticleLabel_, nSVfit_namespace::kTau_phi_lab,    pluginName_);
+  algorithm->requestFitParameter(prodParticleLabel_,   nSVfit_namespace::kTau_visEnFracX, pluginName_);
+  algorithm->requestFitParameter(prodParticleLabel_,   nSVfit_namespace::kTau_phi_lab,    pluginName_);
+  if ( applyVisMassFactor_ ) {
+    algorithm->requestFitParameter(prodParticleLabel_, nSVfit_namespace::kTau_visMass,    pluginName_);
+  }
 }
 
 double NSVfitTauToHadLikelihoodPhaseSpace::operator()(const NSVfitSingleParticleHypothesis* hypothesis, int polSign) const
@@ -44,9 +69,11 @@ double NSVfitTauToHadLikelihoodPhaseSpace::operator()(const NSVfitSingleParticle
   double decayAngle = hypothesis_T->gjAngle();  
   //if ( this->verbosity_ ) std::cout << " decayAngle = " << decayAngle << std::endl;  
   double visEnFracX = hypothesis_T->visEnFracX();
-  double visMass = hypothesis_T->p4vis_rf().mass();
-  if ( visMass < chargedPionMass ) visMass = chargedPionMass;
-  if ( visMass > tauLeptonMass   ) visMass = tauLeptonMass;
+  double visMass = hypothesis_T->visMass();
+  if ( !applyVisMassFactor_ ) {
+    if ( visMass < chargedPionMass ) visMass = chargedPionMass;
+    if ( visMass > tauLeptonMass   ) visMass = tauLeptonMass;
+  }
   double visMass2 = square(visMass);
   double Pvis_rf = hypothesis_T->p4vis_rf().P();
 #ifdef SVFIT_DEBUG     
@@ -70,6 +97,13 @@ double NSVfitTauToHadLikelihoodPhaseSpace::operator()(const NSVfitSingleParticle
     prob /= (1. + 1.e+6*square(visEnFracX - visEnFracX_limit));
   }
   if ( applySinThetaFactor_ ) prob *= (0.5*TMath::Sin(decayAngle));
+
+  if ( applyVisMassFactor_ ) {    
+    int bin = histogram_->FindBin(visMass);
+    if ( bin <= firstBin_ ) bin = firstBin_;
+    if ( bin >= lastBin_  ) bin = lastBin_;
+    prob *= histogram_->GetBinContent(bin);
+  }
   
   if ( applyVisPtCutCorrection_ ) {
     double probCorr = 1.;

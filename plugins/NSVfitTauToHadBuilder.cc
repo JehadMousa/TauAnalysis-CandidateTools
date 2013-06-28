@@ -7,9 +7,9 @@
  *
  * \author Evan Friis, Christian Veelken; UC Davis
  *
- * \version $Revision: 1.24 $
+ * \version $Revision: 1.25 $
  *
- * $Id: NSVfitTauToHadBuilder.cc,v 1.24 2012/03/26 15:47:49 veelken Exp $
+ * $Id: NSVfitTauToHadBuilder.cc,v 1.25 2012/08/28 15:00:23 veelken Exp $
  *
  */
 
@@ -60,7 +60,7 @@ class NSVfitTauToHadBuilder : public NSVfitTauDecayBuilder
     return hypothesis;
   }
 
-  // The two neutrion system in a leptonic decay can have mass.
+  // The neutrino system in hadronic decays is massless
   bool nuSystemIsMassless() const { return true; }
 
   virtual int getDecayMode(const reco::Candidate* candidate) const
@@ -84,9 +84,9 @@ class NSVfitTauToHadBuilder : public NSVfitTauDecayBuilder
     NSVfitTauDecayBuilder::print(stream);
   }
 
-  private:
-    edm::Service<NSVfitTrackService> trackService_;
-    NSVfitSingleParticleTrackExtractor<pat::Tau> trackExtractor_;
+ private:
+  edm::Service<NSVfitTrackService> trackService_;
+  NSVfitSingleParticleTrackExtractor<pat::Tau> trackExtractor_;
 };
 
 #include "FWCore/Framework/interface/MakerMacros.h"

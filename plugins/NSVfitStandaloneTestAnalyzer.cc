@@ -136,20 +136,28 @@ NSVfitStandaloneTestAnalyzer::beginJob()
 
 namespace
 {
-  const reco::Candidate* getObject(const edm::Event& evt, edm::InputTag& src, bool& errorFlag)
+  const reco::Candidate* getObject(const edm::Event& evt, edm::InputTag& src, bool& errorFlag, int verbosity)
   {
     const reco::Candidate* object = 0;
     edm::Handle<CandidateView> objects;
     evt.getByLabel(src, objects);
+    if ( verbosity ) {
+      int idx = 0;
+      for ( CandidateView::const_iterator object = objects->begin();
+	    object != objects->end(); ++object ) {
+	std::cout << src.label() << " #" << idx << ": Pt = " << object->pt() << ", eta = " << object->eta() << ", phi = " << object->phi() << " (mass = " << object->mass() << ")" << std::endl;
+	++idx;
+      }
+    }
     if ( objects->size() >= 1 ) object = &objects->front(); 
     else errorFlag = true;
     return object;
   }
 
-  reco::Candidate::LorentzVector getObjectP4(const edm::Event& evt, edm::InputTag& src, bool& errorFlag)
+  reco::Candidate::LorentzVector getObjectP4(const edm::Event& evt, edm::InputTag& src, bool& errorFlag, int verbosity)
   {
     reco::Candidate::LorentzVector objectP4;
-    const reco::Candidate* object = getObject(evt, src, errorFlag);
+    const reco::Candidate* object = getObject(evt, src, errorFlag, verbosity);
     if ( object ) objectP4 = object->p4();
     return objectP4;
   }
@@ -159,8 +167,9 @@ namespace
 void 
 NSVfitStandaloneTestAnalyzer::analyze(const edm::Event& evt, const edm::EventSetup& es)
 {
-  //std::cout << "<NSVfitStandaloneTestAnalyzer::analyze>:" << std::endl;
-  //std::cout << " fillHistograms = " << fillHistograms_ << std::endl;
+  if ( verbosity_ ) {
+    std::cout << "<NSVfitStandaloneTestAnalyzer::analyze (moduleLabel = " << moduleLabel_ << ")>:" << std::endl;
+  }
 
   reco::Candidate::LorentzVector genDiTauP4;
   reco::Candidate::LorentzVector genLeg1P4;
@@ -168,18 +177,18 @@ NSVfitStandaloneTestAnalyzer::analyze(const edm::Event& evt, const edm::EventSet
   reco::Candidate::LorentzVector genMEtP4;
   bool errorFlag_gen = false;
   if ( doGenPlots_ ) {
-    genDiTauP4 = getObjectP4(evt, srcGenTauPairs_, errorFlag_gen);
-    genLeg1P4 = getObjectP4(evt, srcGenLeg1_, errorFlag_gen);
-    genLeg2P4 = getObjectP4(evt, srcGenLeg2_, errorFlag_gen);
-    genMEtP4 = getObjectP4(evt, srcGenMEt_, errorFlag_gen);
+    genDiTauP4 = getObjectP4(evt, srcGenTauPairs_, errorFlag_gen, verbosity_);
+    genLeg1P4 = getObjectP4(evt, srcGenLeg1_, errorFlag_gen, verbosity_);
+    genLeg2P4 = getObjectP4(evt, srcGenLeg2_, errorFlag_gen, verbosity_);
+    genMEtP4 = getObjectP4(evt, srcGenMEt_, errorFlag_gen, verbosity_);
     if ( errorFlag_gen ) return;
   }
 
   bool errorFlag_rec = false;
-  const reco::Candidate* recLeg1 = getObject(evt, srcRecLeg1_, errorFlag_rec);
-  reco::Candidate::LorentzVector recLeg1P4 = getObjectP4(evt, srcRecLeg1_, errorFlag_rec);
-  const reco::Candidate* recLeg2 = getObject(evt, srcRecLeg2_, errorFlag_rec);
-  reco::Candidate::LorentzVector recLeg2P4 = getObjectP4(evt, srcRecLeg2_, errorFlag_rec);
+  const reco::Candidate* recLeg1 = getObject(evt, srcRecLeg1_, errorFlag_rec, verbosity_);
+  reco::Candidate::LorentzVector recLeg1P4 = getObjectP4(evt, srcRecLeg1_, errorFlag_rec, verbosity_);
+  const reco::Candidate* recLeg2 = getObject(evt, srcRecLeg2_, errorFlag_rec, verbosity_);
+  reco::Candidate::LorentzVector recLeg2P4 = getObjectP4(evt, srcRecLeg2_, errorFlag_rec, verbosity_);
   reco::Candidate::LorentzVector recMEtP4;
   TMatrixD recMEtCov(2,2);
   edm::Handle<METView> recMETs;
@@ -201,8 +210,16 @@ NSVfitStandaloneTestAnalyzer::analyze(const edm::Event& evt, const edm::EventSet
     } else {
       recMEtCov = recMETs->front().getSignificanceMatrix();
     }
-  }
+  }  
   if ( errorFlag_rec ) return;
+
+  if ( verbosity_ ) {
+    std::cout << "recLeg1: Pt = " << recLeg1P4.pt() << ", eta = " << recLeg1P4.eta() << ", phi = " << recLeg1P4.phi() << " (type = " << typeLeg1_ << ", mass = " << recLeg1P4.mass() << ")" << std::endl;
+    std::cout << "recLeg2: Pt = " << recLeg2P4.pt() << ", eta = " << recLeg2P4.eta() << ", phi = " << recLeg2P4.phi() << " (type = " << typeLeg2_ << ", mass = " << recLeg2P4.mass() << ")" << std::endl;
+    std::cout << "recMEtP4: Pt = " << recMEtP4.pt() << ", phi = " << recMEtP4.phi() << " (Px = " << recMEtP4.px() << ", Py = " << recMEtP4.py() << ")" << std::endl;
+    std::cout << "recMEtCov:" << std::endl;
+    recMEtCov.Print();
+  }
 
   double evtWeight = 1.0;
   for ( vInputTag::const_iterator srcWeight = srcWeights_.begin();

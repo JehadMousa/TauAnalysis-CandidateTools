@@ -362,7 +362,7 @@ const reco::Candidate* getDistPion(const pat::Tau& recTauJet)
     return 0;
   }
 
-  const reco::PFCandidateRefVector& recTauJetChargedConstituents = recTauJet.signalPFChargedHadrCands();
+  const std::vector<reco::PFCandidatePtr>& recTauJetChargedConstituents = recTauJet.signalPFChargedHadrCands();
 
   if ( recTauJetChargedConstituents.size() == 1 ) {
 
@@ -372,8 +372,8 @@ const reco::Candidate* getDistPion(const pat::Tau& recTauJet)
   } else if ( recTauJetChargedConstituents.size() == 3 ) {
     double recTauJetCharge = recTauJet.charge();
 
-    for ( reco::PFCandidateRefVector::const_iterator recTauJetChargedConstituent = recTauJetChargedConstituents.begin();
-         recTauJetChargedConstituent != recTauJetChargedConstituents.end(); ++recTauJetChargedConstituent ) {
+    for ( std::vector<reco::PFCandidatePtr>::const_iterator recTauJetChargedConstituent = recTauJetChargedConstituents.begin();
+	  recTauJetChargedConstituent != recTauJetChargedConstituents.end(); ++recTauJetChargedConstituent ) {
 //--- tau- --> three-prong case (in particular a1- --> pi- pi+ pi-);
 //    the "distinguishable" pion is the pion of charge opposite to the tau-jet charge
       if ( (*recTauJetChargedConstituent)->charge()*recTauJetCharge < 0 ) {
@@ -435,16 +435,21 @@ const reco::Candidate* getDistPion(const reco::GenJet& genTauJet)
 
 std::pair<double, double> compMEtProjU(const reco::Candidate::LorentzVector& zP4, double metPx, double metPy, int& errorFlag, bool subtract_qT)
 {
-  if ( zP4.pt() == 0. ) {
+  double qX = zP4.px();
+  double qY = zP4.py();
+  
+  return compMEtProjU(qX, qY, metPx, metPy, errorFlag, subtract_qT);
+}
+
+std::pair<double, double> compMEtProjU(double qX, double qY, double metPx, double metPy, int& errorFlag, bool subtract_qT)
+{
+  double qT = TMath::Sqrt(qX*qX + qY*qY);
+  if ( qT == 0. ) {
     edm::LogWarning ("compMEtProjU")
       << " Failed to compute projection, because Z0 candidate has zero Pt --> returning dummy solution !!";
     errorFlag = 1;
     return std::pair<double, double>(0., 0.);
   }
-  
-  double qX = zP4.px();
-  double qY = zP4.py();
-  double qT = TMath::Sqrt(qX*qX + qY*qY);
   
   double uX = -metPx;
   double uY = -metPy;
